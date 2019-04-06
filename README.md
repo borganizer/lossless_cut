@@ -17,4 +17,7 @@ Source is compatible with MythTV versions 28.x, 29.x.
 
   # Installing mediainfo
   apt install mediainfo
+  
+  cp -rp . /usr/share/lossless_cut
+  cp lossless_cut /usr/bin
 ```
