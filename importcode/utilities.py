@@ -62,7 +62,7 @@ __version__ = '0.1.6'
 #
 ## Common function imports
 import os
-import ConfigParser
+import configparser
 import subprocess
 import locale
 import logging
@@ -77,15 +77,15 @@ import traceback
 import gettext
 #
 # Indicator specific imports
-import common
+from . import common
 #
 ## Local variables
 _ = gettext.gettext
 __author__ = common.__author__
 __title__ = \
-    _(u"""utilities.py - Provides various utility functions globally
+    _("""utilities.py - Provides various utility functions globally
 used by lossless_cut""")
-__purpose__ = _(u"""
+__purpose__ = _("""
 This python script supports the lossless_cut loss less recording
 editor various utility functions.
 """)
@@ -126,7 +126,7 @@ def set_language():
     return (gettext.gettext)
 # end set_language()
 
-def create_logger(log_file, log_name=u"lossless_cut", filename=False):
+def create_logger(log_file, log_name="lossless_cut", filename=False):
     """ Create a logger.
     return the logger object
     """
@@ -139,7 +139,7 @@ def create_logger(log_file, log_name=u"lossless_cut", filename=False):
         handler = logging.StreamHandler()
     # Create formatter
     formatter = logging.Formatter(\
-        u"%(asctime)s - %(levelname)s - %(message)s")
+        "%(asctime)s - %(levelname)s - %(message)s")
 
     # Add formatter to handler
     handler.setFormatter(formatter)
@@ -154,7 +154,7 @@ def exec_commandline(command):
     return None if the command line failed
     return array of the stdout and stderr results
     """
-    results = [u'', u'']
+    results = ['', '']
 
     try:
         process = subprocess.Popen(command, shell=True,
@@ -166,15 +166,17 @@ def exec_commandline(command):
 
     # Get output from command line call
     try:
-        results[0] = unicode(process.stdout.read(), u"utf-8")
+        results[0] = str(process.stdout.read(), 'utf-8')
     except (UnicodeEncodeError, TypeError):
         pass
 
     # Get error output from command line call (if any)
     try:
-        results[1] = unicode(process.stderr.read(), u"utf-8")
+        results[1] = str(process.stderr.read(), 'utf-8')
     except (UnicodeEncodeError, TypeError):
         pass
+
+
 
     return results
  # end exec_commandline()
@@ -185,7 +187,7 @@ def create_cachedir(full_path):
     return nothing
     """
     if full_path[0] == '~':
-        full_path = os.path.expanduser(u"~") + full_path[1:]
+        full_path = os.path.expanduser("~") + full_path[1:]
     if not os.path.isdir(full_path):
         os.makedirs(full_path)
     return  # end create_cachedir()
@@ -196,23 +198,24 @@ def commandline_call(command, args):
     return True and STDIO text command results
     return False and STDERR if results had errors
     """
-    textdata = u''
-    commandline = u'%s %s' % (command, args)
+    textdata = ''
+    commandline = '%s %s' % (command, args)
     # An absolute path is required.
     path, file_basename, ext = \
             get_filename_parts(command)
     # If this is just a text file then read the file data
-    if ext == u'txt' or ext == u'log':
+    if ext == 'txt' or ext == 'log':
         try:
             filepointer = open(command, 'r')
             textdata = filepointer.read()
             filepointer.close()
             return [True, textdata]
         except:
-            return [False, _(u'File could not be opened')]
+            return [False, _('File could not be opened')]
     # Execute the command
     success = True
     result = exec_commandline(commandline)
+
     if result[0]:
         textdata = result[0]
     else:
@@ -228,49 +231,49 @@ def get_config(opts, keyframe_adjust=False, ll_report=False,
     return a configuration dictionary
     """
     err_invalid_variable  = _(
-u'''The value for the configuration file variable "%%s" is invalid.
+'''The value for the configuration file variable "%%s" is invalid.
 Check the "%s" for valid options.''') % common.CONFIG_FILE
     err_true_false = _(
-u'''The value for the configuration file variable "%s" is invalid.
+'''The value for the configuration file variable "%s" is invalid.
 It must be either "true" or "false".''')
     err_bad_path = _(
-u'''The value for the configuration file variable "%s" is invalid.
+'''The value for the configuration file variable "%s" is invalid.
 The directory path "%s" does not exist.
 %s''')
     err_read_write = _(
-u'''The script does not have read and write permissions for the "%s" variables
+'''The script does not have read and write permissions for the "%s" variables
 path: "%s"''')
     err_working_diskspace = _(
-u'''There is not enough available disk space in the working directory "%s" available "%s" bytes
+'''There is not enough available disk space in the working directory "%s" available "%s" bytes
 to loss less cut recording "%s", size "%s" bytes.''')
     err_missing_subtitle_args = _(
-u'''The "%%s" subtitle utility arguments variable is missing from the
+'''The "%%s" subtitle utility arguments variable is missing from the
 configuration file "%s".''') % common.CONFIG_FILE
     err_concert_cuts_0 = _(
-u'''The track numbers option "-T" must only be accompanied with the
+'''The track numbers option "-T" must only be accompanied with the
 Stip option "-S".''')
     err_concert_cuts_1 = _(
-u'''The Concert Cuts option "-C" must be accompanied with either a "-e" export
+'''The Concert Cuts option "-C" must be accompanied with either a "-e" export
 or a "-m" move option. Replace "-r" is not valid.''')
     err_concert_cuts_2 = _(
-u'''The Concert Cuts option "-C" configuration file
+'''The Concert Cuts option "-C" configuration file
 "%s" does not exist.''')
     err_invalid_sequence_number  = _(
-u'''The value for the configuration file variable "%s" must end with
+'''The value for the configuration file variable "%s" must end with
 a valid integer in the format "delete_rec_01".
 ''')
     err_no_jobid = _(
-u'''There must be a -j "%%JOBID%%" command line argument present when
+'''There must be a -j "%%JOBID%%" command line argument present when
 you use the "error_detection" configuration variables.
 You have the following "error_detection" configuration variables active:
 %s
 ''')
     err_invalid_jobid = _(
-u'''The job ID -j "%%JOBID%%" command line argument must be an integer.
+'''The job ID -j "%%JOBID%%" command line argument must be an integer.
 Your invalid JobID is "%s".
 ''')
     err_invalid_detection_values = _(
-u'''The error detection variable "%s" with configuration arguments:
+'''The error detection variable "%s" with configuration arguments:
 %s
 is not valid.
 You may not have replaced all instances of ";" semicolons with "\\;" or
@@ -280,10 +283,10 @@ configuration file documentation for the "error_detection" section.
     #
     configuration = {}
     #
-    configuration['movepath'] = u''
-    configuration['TVexportfmt'] = u''
-    configuration['MOVIEexportfmt'] = u''
-    configuration['GENERICexportfmt'] = u''
+    configuration['movepath'] = ''
+    configuration['TVexportfmt'] = ''
+    configuration['MOVIEexportfmt'] = ''
+    configuration['GENERICexportfmt'] = ''
     configuration['keep_log'] = False
     configuration['remove_recorded'] = []
     configuration['mkvmerge_cut_addon'] = None
@@ -291,12 +294,12 @@ configuration file documentation for the "error_detection" section.
     configuration['error_detection'] = []
     #
     ## Initialize the default DVB Subtitle settings
-    for key in common.DEFAULT_CONFIG_SETTINGS[
-                                    'dvb_subtitle_defaults'].keys():
+    for key in list(common.DEFAULT_CONFIG_SETTINGS[
+                                    'dvb_subtitle_defaults'].keys()):
         configuration[key] = common.DEFAULT_CONFIG_SETTINGS[
                                     'dvb_subtitle_defaults'][key]
     #
-    cfg = ConfigParser.RawConfigParser()
+    cfg = configparser.RawConfigParser()
     cfg.read(common.CONFIG_FILE)
     #
     ## Check if this config file is old and does not have a
@@ -340,8 +343,7 @@ configuration file documentation for the "error_detection" section.
                     continue
                 if option == 'ccextractor_args':
                     try:
-                        configuration[option] = unicode(
-                                            cfg.get(section, option), 'utf8')
+                        configuration[option] = cfg.get(section, option)
                     except Exception:
                         raise Exception(err_invalid_variable % option)
                     continue
@@ -354,8 +356,7 @@ configuration file documentation for the "error_detection" section.
                     continue
                 if option == 'movepath':
                     try:
-                        configuration[option] = unicode(
-                                            cfg.get(section, option), 'utf8')
+                        configuration[option] = cfg.get(section, option)
                     except Exception:
                         raise Exception(err_invalid_variable %
                                             option)
@@ -369,16 +370,14 @@ configuration file documentation for the "error_detection" section.
                     continue
                 if option == 'logpath':
                     try:
-                        configuration[option] = unicode(
-                                            cfg.get(section, option), 'utf8')
+                        configuration[option] = cfg.get(section, option)
                     except Exception:
                         raise Exception(err_invalid_variable %
                                             option)
                     continue
                 if option == 'movie_format':
                     try:
-                        configuration[option] = unicode(
-                                            cfg.get(section, option), 'utf8')
+                        configuration[option] = cfg.get(section, option)
                     except Exception:
                         raise Exception(err_invalid_variable % option)
                     for content in ["%(title)s", "%(releasedate)s", ]:
@@ -388,8 +387,7 @@ configuration file documentation for the "error_detection" section.
                                             option)
                 if option == 'tvseries_format':
                     try:
-                        configuration[option] = unicode(
-                                            cfg.get(section, option), 'utf8')
+                        configuration[option] = cfg.get(section, option)
                     except Exception:
                         raise Exception(err_invalid_variable %
                                             option)
@@ -399,6 +397,13 @@ configuration file documentation for the "error_detection" section.
                         if index == -1:
                             raise Exception(err_invalid_variable %
                                                         option)
+                if option == 'passthrough':
+                    try:
+                        configuration[option] = cfg.getboolean(
+                                                        section, option)
+                    except ValueError:
+                        raise Exception(err_true_false % option)
+                    continue
                 if option == 'strip':
                     try:
                         configuration[option] = cfg.getboolean(
@@ -408,8 +413,7 @@ configuration file documentation for the "error_detection" section.
                     continue
                 if option == 'workpath':
                     try:
-                        configuration[option] = unicode(
-                                            cfg.get(section, option), 'utf8')
+                        configuration[option] = cfg.get(section, option)
                     except Exception:
                         raise Exception(err_invalid_variable %
                                                     option)
@@ -418,24 +422,21 @@ configuration file documentation for the "error_detection" section.
             for option in cfg.options(section):
                 if option == 'television':
                     try:
-                        configuration['TVexportfmt'] = unicode(
-                                            cfg.get(section, option), 'utf8')
+                        configuration['TVexportfmt'] = cfg.get(section, option)
                     except Exception:
                         raise Exception(err_invalid_variable %
                                                     option)
                     continue
                 if option == 'movie':
                     try:
-                        configuration['MOVIEexportfmt'] = unicode(
-                                            cfg.get(section, option), 'utf8')
+                        configuration['MOVIEexportfmt'] = cfg.get(section, option)
                     except Exception:
                         raise Exception(err_invalid_variable %
                                                     option)
                     continue
                 if option == 'generic':
                     try:
-                        configuration['GENERICexportfmt'] = unicode(
-                                            cfg.get(section, option), 'utf8')
+                        configuration['GENERICexportfmt'] = cfg.get(section, option)
                     except Exception:
                         raise Exception(err_invalid_variable %
                                                     option)
@@ -451,144 +452,130 @@ configuration file documentation for the "error_detection" section.
                     continue
                 if option == 'moveposition':
                     try:
-                        configuration[option] = unicode(
-                                            cfg.get(section, option), 'utf8')
+                        configuration[option] = cfg.get(section, option)
                     except Exception:
                         raise Exception(err_invalid_variable %
                                                     option)
                     continue
                 if option == 'font_point_size':
                     try:
-                        configuration[option] = unicode(
-                                            cfg.get(section, option), 'utf8')
+                        configuration[option] = cfg.get(section, option)
                     except Exception:
                         raise Exception(err_invalid_variable %
                                                     option)
                     continue
                 if option == 'background_alpha':
                     try:
-                        configuration[option] = unicode(
-                                            cfg.get(section, option), 'utf8')
+                        configuration[option] = cfg.get(section, option)
                     except Exception:
                         raise Exception(err_invalid_variable %
                                                     option)
                     continue
                 if option == 'yoffset':
                     try:
-                        configuration[option] = unicode(
-                                            cfg.get(section, option), 'utf8')
+                        configuration[option] = cfg.get(section, option)
                     except Exception:
                         raise Exception(err_invalid_variable %
                                                     option)
                     continue
                 if option == 'xoffset':
                     try:
-                        configuration[option] = unicode(
-                                            cfg.get(section, option), 'utf8')
+                        configuration[option] = cfg.get(section, option)
                     except Exception:
                         raise Exception(err_invalid_variable %
                                                     option)
                     continue
                 if option == 'xwidth':
                     try:
-                        configuration[option] = unicode(
-                                            cfg.get(section, option), 'utf8')
+                        configuration[option] = cfg.get(section, option)
                     except Exception:
                         raise Exception(err_invalid_variable %
                                                     option)
                     continue
                 if option == 'h_unused':
                     try:
-                        configuration[option] = unicode(
-                                            cfg.get(section, option), 'utf8')
+                        configuration[option] = cfg.get(section, option)
                     except Exception:
                         raise Exception(err_invalid_variable %
                                                     option)
                     continue
                 if option == 'vertical':
                     try:
-                        configuration[option] = unicode(
-                                            cfg.get(section, option), 'utf8')
+                        configuration[option] = cfg.get(section, option)
                     except Exception:
                         raise Exception(err_invalid_variable %
                                                     option)
                     continue
                 if option == 'yoffset2':
                     try:
-                        configuration[option] = unicode(
-                                            cfg.get(section, option), 'utf8')
+                        configuration[option] = cfg.get(section, option)
                     except Exception:
                         raise Exception(err_invalid_variable %
                                                     option)
                     continue
                 if option == 'maxlines':
                     try:
-                        configuration[option] = unicode(
-                                            cfg.get(section, option), 'utf8')
+                        configuration[option] = cfg.get(section, option)
                     except Exception:
                         raise Exception(err_invalid_variable %
                                                     option)
                     continue
                 if option == 'unknown_1':
                     try:
-                        configuration['unknown_1'] = unicode(
-                                            cfg.get(section, option), 'utf8')
+                        configuration['unknown_1'] = cfg.get(section, option)
                     except Exception:
                         raise Exception(err_invalid_variable %
                                                     option)
                     continue
                 if option == 'unknown_2':
                     try:
-                        configuration[option] = unicode(
-                                            cfg.get(section, option), 'utf8')
+                        configuration[option] = cfg.get(section, option)
                     except Exception:
                         raise Exception(err_invalid_variable %
                                                     option)
                     continue
                 if option == 'vobsub_delay':
                     try:
-                        configuration[option] = unicode(
-                                            cfg.get(section, option), 'utf8')
+                        configuration[option] = cfg.get(section, option)
                     except Exception:
                         raise Exception(err_invalid_variable %
                                                     option)
                     continue
         if section == 'remove_recorded':
             for option in cfg.options(section):
-                if option == u'delete_rec_all':
-                    if unicode(cfg.get(section, option), 'utf8') == 'ALL':
+                if option == 'delete_rec_all':
+                    if cfg.get(section, option) == 'ALL':
                         configuration['remove_recorded'] = [[True, True]]
                         break
                 elif option.startswith('delete_rec_'):
                     try:
-                        seg_num = int(option.replace('delete_rec_', u''))
+                        seg_num = int(option.replace('delete_rec_', ''))
                     except ValueError:
                         raise Exception(err_invalid_sequence_number)
                     #
                     try:
-                        temp = unicode(cfg.get(section, option), 'utf8')
+                        temp = cfg.get(section, option)
                     except Exception:
                         raise Exception(err_invalid_variable % option)
                     #
                     channel_title = [False, False]
                     if temp.find(';') == -1:
-                        channel_title[1] = filter(
-                                is_not_punct_char, temp.strip().lower())
+                        channel_title[1] = list(filter(
+                                is_not_punct_char, temp.strip().lower()))
                     else:
                         index = temp.find(';')
                         channel_title[0] = temp[:index].strip().lower()
                         if temp[-1:] != ';':
-                            channel_title[1] = filter(
+                            channel_title[1] = list(filter(
                                 is_not_punct_char, temp[
-                                                index:].strip().lower())
+                                                index:].strip().lower()))
                     #
                     configuration['remove_recorded'].append(channel_title)
                     continue
         if section == 'mkvmerge_user_settings':
             for option in cfg.options(section):
                 try:
-                    configuration[option] = unicode(
-                                        cfg.get(section, option), 'utf8')
+                    configuration[option] = cfg.get(section, option)
                     if configuration[option]:
                         configuration[option] = configuration[option].strip()
                 except Exception:
@@ -603,17 +590,17 @@ configuration file documentation for the "error_detection" section.
                     for key in keys:
                         error_args_dict[key] = None
                     #
-                    original_args = unicode(cfg.get(section, option),
-                                        'utf8')
+                    original_args = cfg.get(section, option)
+                                       
                     error_args = original_args.replace(
-                                            '\\;', u';').strip().split(',')
+                                            '\\;', ';').strip().split(',')
                     # Clean up and empty args
                     if not error_args[-1]:
                         del(error_args[-1])
                     #
                     if len(error_args) > 4:
                         raise Exception(
-_(u'''"%s" has too many arguments "%s" detected, there can only be four.
+_('''"%s" has too many arguments "%s" detected, there can only be four.
 Arguments: %s
 Resulting argument list: %s''') % (option, len(error_args),
                                     original_args, error_args))
@@ -624,7 +611,7 @@ Resulting argument list: %s''') % (option, len(error_args),
                     #
                     if not error_args_dict['type'] in ['alert', 'abort']:
                         raise Exception(
-_(u' Invalid error type "%s" must be "alert" or "abort"') %
+_(' Invalid error type "%s" must be "alert" or "abort"') %
                             error_args_dict['type'])
                     #
                     try:
@@ -632,12 +619,12 @@ _(u' Invalid error type "%s" must be "alert" or "abort"') %
                                         int(error_args_dict['threshold'])
                     except (TypeError, ValueError):
                         raise Exception(
-_(u' Threshold value "%s" must be an integer.') %
+_(' Threshold value "%s" must be an integer.') %
                                         error_args_dict['threshold'])
                     #
                     if not error_args_dict['bash_command']:
                         raise Exception(
-_(u' A bash command must be provided.'))
+_(' A bash command must be provided.'))
                     #
                     #
                     ## Verify that each variable has a valid argument
@@ -651,17 +638,17 @@ _(u' A bash command must be provided.'))
                 #
                 except Exception as errmsg:
                     error_message = err_invalid_variable % option
-                    error_message += u'\n\n%s' % errmsg
+                    error_message += '\n\n%s' % errmsg
                     raise Exception(error_message)
                 continue
     #
     ## Change any configuration settings as dictated
     ## by the command line options
     if load_db:
-        configuration['archivefile'] = unicode(opts.archivefile, 'utf8')
+        configuration['archivefile'] = opts.archivefile
         configuration['recordedfile'] = configuration['archivefile']
     else:
-        configuration['recordedfile'] = unicode(opts.recordedfile, 'utf8')
+        configuration['recordedfile'] = opts.recordedfile
     #
     configuration['tracknumber'] = None
     if not keyframe_adjust and not ll_report and not load_db:
@@ -686,7 +673,7 @@ _(u' A bash command must be provided.'))
             #
             if opts.concertcuts != True:
                 if opts.concertcuts[0] == '~':
-                    opts.concertcuts = os.path.expanduser(u"~") + \
+                    opts.concertcuts = os.path.expanduser("~") + \
                                                     opts.concertcuts[1:]
             #
             if opts.concertcuts == True:
@@ -700,12 +687,13 @@ _(u' A bash command must be provided.'))
         #
         if opts.addmetadata:
             configuration['add_metadata'] = False
-        configuration['movepath'] = u''
+        configuration['movepath'] = ''
         if opts.movepath:
-            configuration['movepath'] = unicode(opts.movepath, 'utf8')
+            configuration['movepath'] = opts.movepath
+        configuration['passthrough'] = opts.passthrough
         configuration['strip'] = opts.noextratracks
         if opts.workingpath:
-            configuration['workpath'] = unicode(opts.workingpath, 'utf8')
+            configuration['workpath'] = opts.workingpath
         configuration['mythvideo_export'] = opts.mythvideo_export
         configuration['replace'] = opts.replace_recorded
         configuration['forcemythxxextractor'] = opts.forcemythxxextractor
@@ -714,8 +702,8 @@ _(u' A bash command must be provided.'))
         else:
             configuration['delete_old'] = False
         #
-        configuration['format_sup_values'] = u''
-        configuration['projectx_ini'] = u''
+        configuration['format_sup_values'] = ''
+        configuration['projectx_ini'] = ''
         if configuration['include_dvb_subtitles']:
             configuration['format_sup_values'] = common.FORMAT_SUP_VALUES % \
                                                         configuration
@@ -730,7 +718,7 @@ _(u' A bash command must be provided.'))
                 raise Exception(err_no_jobid %
                             configuration['error_detection'])
             try:
-                configuration['jobid'] = long(opts.jobid)
+                configuration['jobid'] = opts.jobid
             except (TypeError, ValueError):
                 raise Exception(err_invalid_jobid % opts.jobid)
     #
@@ -745,8 +733,8 @@ _(u' A bash command must be provided.'))
     #
     ## Check that that these variables are in the config dictionary
     for option in ['logpath', 'workpath']:
-        if not option in configuration.keys():
-            raise Exception(u'The configuration option "%s" is missing.' % (
+        if not option in list(configuration.keys()):
+            raise Exception('The configuration option "%s" is missing.' % (
                                 option))
     #
     ## Expand any "~" paths, verify the directory exist and
@@ -769,7 +757,7 @@ _(u' A bash command must be provided.'))
                 except Exception as errmsg:
                     raise Exception(err_bad_path % (option,
                                         configuration[option],
-                                        u"Error: " + errmsg))
+                                        "Error: " + errmsg))
         #
         if not configuration[option]:
             continue
@@ -786,7 +774,7 @@ _(u' A bash command must be provided.'))
     configuration['recorded_dir'], configuration['recorded_name'], \
         configuration['recorded_ext'] = get_filename_parts(
             configuration['recordedfile'])
-    configuration['base_name'] = u'%s.%s' % (
+    configuration['base_name'] = '%s.%s' % (
                 configuration['recorded_name'],
                 configuration['recorded_ext'])
     if ll_report:
@@ -801,10 +789,10 @@ _(u' A bash command must be provided.'))
         configuration['logfile'] = os.path.join(configuration['logpath'],
                                    "Load_DB_%s.log" %
                                    configuration['recorded_name'].replace(
-                                                            u'.tar', u''))
+                                                            '.tar', ''))
     else:
         configuration['logfile'] = os.path.join(configuration['logpath'],
-                                   configuration['recorded_name'] + u'.log')
+                                   configuration['recorded_name'] + '.log')
     #
     # Remove any old log file
     try:
@@ -828,7 +816,7 @@ _(u' A bash command must be provided.'))
     configuration['mythccextractor_args'] = common.MYTHCCEXTRACTOR_ARGS
     #
     ## Verify that the subtitle utility arguments were in the config file
-    if not 'ccextractor_args' in configuration.keys():
+    if not 'ccextractor_args' in list(configuration.keys()):
         raise Exception(err_missing_subtitle_args % ('ccextractor_args'))
     #
     configuration['strip_args'] = ''
@@ -843,12 +831,12 @@ _(u' A bash command must be provided.'))
         #
         if opts.all and not opts.bugarchive:
             raise Exception(
-_(u'''The copy all recorded video option "-A" is only valid when the -B,
+_('''The copy all recorded video option "-A" is only valid when the -B,
 bug archive option is also selected'''))
         #
         if opts.starttime and not opts.bugarchive:
             raise Exception(
-_(u'''The sample startime option "-s" is only valid when the -B, bug archive
+_('''The sample startime option "-s" is only valid when the -B, bug archive
 option is also selected'''))
         #
         if opts.starttime:
@@ -865,7 +853,7 @@ option is also selected'''))
                         break
             if error:
                 raise Exception(
-_(u'The sample startime "%s" is invalid. It must be in "HH:MM:SS" format.') % (
+_('The sample startime "%s" is invalid. It must be in "HH:MM:SS" format.') % (
                                opts.starttime))
             if len(time) == 1:
                 configuration['sample_starttime'] = int(time[0])
@@ -880,9 +868,9 @@ _(u'The sample startime "%s" is invalid. It must be in "HH:MM:SS" format.') % (
                     count += 1
     #
     configuration['system_info'] = exec_commandline(
-                                u'lsb_release -a && uname -m')[0]
+                                'lsb_release -a && uname -m')[0]
     configuration['system_info'] = configuration['system_info'].replace(
-                                u'No LSB modules are available.\n', u'')
+                                'No LSB modules are available.\n', '')
     #
     return configuration
 #
@@ -908,12 +896,12 @@ contains the variable "%%s" and therefore the variable
 "%%s" must be assigned in the
 "%s" file.''') % concertcuts
     #
-    configuration['artist'] = u''
-    configuration['album'] = u''
+    configuration['artist'] = ''
+    configuration['album'] = ''
     configuration['concertcuts'] = common.CONCERT_CUT_DEFAULT_FORMAT
     configuration['segment_names'] = {}
     #
-    cfg = ConfigParser.RawConfigParser()
+    cfg = configparser.RawConfigParser()
     cfg.read(concertcuts)
     for section in cfg.sections():
         if section[:5] == 'File ':
@@ -923,28 +911,25 @@ contains the variable "%%s" and therefore the variable
             for option in cfg.options(section):
                 if option == 'artist':
                     try:
-                        configuration[option] = unicode(
-                                            cfg.get(section, option), 'utf8')
+                        configuration[option] = cfg.get(section, option)
                     except Exception:
                         raise Exception(err_invalid_variable % option)
                     continue
                 if option == 'album':
                     try:
-                        configuration[option] = unicode(
-                                            cfg.get(section, option), 'utf8')
+                        configuration[option] = cfg.get(section, option)
                     except Exception:
                         raise Exception(err_invalid_variable % option)
                     continue
                 if option.startswith('segment_'):
                     try:
-                        seg_num = int(option.replace('segment_', u''))
+                        seg_num = int(option.replace('segment_', ''))
                     except ValueError:
                         raise Exception(
                                     err_invalid_segment_number % option)
                     #
                     try:
-                        configuration['segment_names'][seg_num] = unicode(
-                                            cfg.get(section, option), 'utf8')
+                        configuration['segment_names'][seg_num] = cfg.get(section, option)
                     except Exception:
                         raise Exception(err_invalid_variable % option)
                     #
@@ -956,8 +941,7 @@ contains the variable "%%s" and therefore the variable
             for option in cfg.options(section):
                 if option == 'concertcuts':
                     try:
-                        configuration[option] = unicode(
-                                            cfg.get(section, option), 'utf8')
+                        configuration[option] = cfg.get(section, option)
                     except Exception:
                         raise Exception(err_invalid_variable % option)
                     continue
@@ -981,19 +965,19 @@ def validate_audio_track_number(configuration):
     ''' Validate that the audio track number actually exists.
     return nothing
     '''
-    err_1 = _(u'''Unknown error when attempting to validate audio tracks.
+    err_1 = _('''Unknown error when attempting to validate audio tracks.
 > %s
 %s''')
-    err_2 = _(u'''There is no audio track number "%s" in recording file
+    err_2 = _('''There is no audio track number "%s" in recording file
 %s
 See the track numbers and types as listed by "mkvmerge --identify":
 %s''')
     #
-    args = u'-i "%(recordedfile)s"' % configuration
+    args = '-i "%(recordedfile)s"' % configuration
     results = commandline_call(common.MKVMERGE, args)
     #
     if not results[0]:
-        raise Exception(err_1 % (u'%s %s' % (common.MKVMERGE, args),
+        raise Exception(err_1 % ('%s %s' % (common.MKVMERGE, args),
                             results[1]))
     #
     track_ids = results[1].split('\n')
@@ -1003,7 +987,7 @@ See the track numbers and types as listed by "mkvmerge --identify":
         if not index == -1:
             if str(configuration['tracknumber']) == \
                         track[:track_id_index].replace(
-                            common.TRACK_ID, u'').strip():
+                            common.TRACK_ID, '').strip():
                 return
     #
     raise Exception(err_2 % (configuration['tracknumber'],
@@ -1099,7 +1083,7 @@ OR for the Sun Java runtime:
                                     results[1]))
     #
     configuration['mkvmerge_version'] = \
-                results[1].replace(u'\n', u'').strip()
+                results[1].replace('\n', '').strip()
     #
     index = results[1].find(' v')
     if index == -1:
@@ -1129,7 +1113,7 @@ OR for the Sun Java runtime:
                                     results[1]))
     #
     configuration['mediainfo_version'] = \
-                results[1].replace(u'\n', u'').strip()
+                results[1].replace('\n', '').strip()
     #
     mkvinfo_version = 'MediaInfoLib - '
     add_index = len(mkvinfo_version)
@@ -1164,10 +1148,10 @@ OR for the Sun Java runtime:
         results = commandline_call('which', 'java')
         if not results[0]:
             raise Exception(no_java_installed_err)
-        configuration['java'] = results[1].replace('\n', u'').strip()
+        configuration['java'] = results[1].replace('\n', '').strip()
     #
     ## Display that the user is missing their mythvidexport settings
-    if configuration.has_key('mythvideo_export'):
+    if 'mythvideo_export' in configuration:
         if not configuration['TVexportfmt'] or \
                 not configuration['MOVIEexportfmt'] or \
                 not configuration['GENERICexportfmt']:
@@ -1186,30 +1170,30 @@ def read_iso_language_codes(logger=False):
         return lang_codes
     #
     fileh = open(common.ISO639_2_LANG_CODE_FILE, 'r')
-    lang_text_list = unicode(fileh.read(), 'utf8').split(u'\n')
+    lang_text_list = fileh.read().split('\n')
     fileh.close()
     #
     for count in range(len(lang_text_list[:-1])):
-        if lang_text_list[count].find(u'|') == -1:
+        if lang_text_list[count].find('|') == -1:
             if logger:
                 # Show count one less as the first line should be the download
                 # date time text e.g. "Downloaded on Thursday Sept, 13th 2012"
                 logger.info(_(
-u''''ISO639-2 language code file was last updated on %s contains %d language codes''') %
+''''ISO639-2 language code file was last updated on %s contains %d language codes''') %
                     (lang_text_list[count].strip('\n'),
                         len(lang_text_list) - 1))
             continue
         #
-        one_line = lang_text_list[count].replace(u'\n', u'').strip().split(u'|')
+        one_line = lang_text_list[count].replace('\n', '').strip().split('|')
         # Clean and lowrcase each value
         for index in range(len(one_line)):
             one_line[index] = one_line[index].strip().lower()
         # Extract each item:
         isocode = one_line[0]
-        match_text = u''
+        match_text = ''
         for text_count in range(3, 5):
             if one_line[text_count]:
-                match_text += u' ' + one_line[text_count]
+                match_text += ' ' + one_line[text_count]
         match_text = match_text.strip()
         if not match_text:
             continue
@@ -1227,28 +1211,28 @@ def get_iso_language_code(lang_codes, sublanguage, logger=False):
     #
     # Find a language match
     lower_sublanguage = sublanguage.lower()
-    for key in lang_codes.keys():
+    for key in list(lang_codes.keys()):
         if not lang_codes[key].find(lower_sublanguage) == -1:
             if logger:
                 logger.info(_(
-u''''ISO639-2 language code match found for "%s" language codes "%s" will be used.''') %
+''''ISO639-2 language code match found for "%s" language codes "%s" will be used.''') %
                 (sublanguage, key))
             return key
     else:
         if logger:
             logger.info(_(
-u''''No matching ISO639-2 language code was found for "%s" subtitle will default to "unknown".''') %
+''''No matching ISO639-2 language code was found for "%s" subtitle will default to "unknown".''') %
                 (sublanguage))
-        return u''
+        return ''
 #
 def make_timestamp(secs):
     '''Take a floating point number of fractional seconds and
     convert into a cut point timestamp.
     return a timestamp in the format "00:00:00.123456789"
     '''
-    timestamp = unicode((datetime.min +
+    timestamp = str((datetime.min +
                         timedelta(0,int(secs))).time().strftime(
-                        '%H:%M:%S') + (u'%0.09f' % (
+                        '%H:%M:%S') + ('%0.09f' % (
                         secs - int(secs)))[1:])
     #
     return timestamp
@@ -1261,7 +1245,7 @@ def display_recorded_info(configuration, logger=False):
     # because it is needed by the program.
     # Thank you for contributing to this project.
     verbage = \
-            _(u'''
+            _('''
 Recorded video file information:
     Frames per second (FPS):      %(fps).03f
     WidthxHeight in pixels:       %(width)sx%(height)s
@@ -1284,7 +1268,7 @@ Recording device:
     # because it is needed by the program.
     # Thank you for contributing to this project.
     verbage += \
-            _(u'''
+            _('''
 Track totals:
     %(total_video)d Video track(s)
     %(total_audio)d Audio track(s)
@@ -1300,19 +1284,19 @@ Track totals:
             continue
         #
         verbage += _(
-u'''%s track details:
+'''%s track details:
 ''') % (track_type.title())
         for detail_dict in configuration['trackinfo'][
                                         '%s_details' % track_type]:
-            track_details = u''
+            track_details = ''
             for key in common.TRACK_ELEM_DICT[track_type]:
                 if not detail_dict[key]:
                     continue
                 track_details += _(
-u'''    %s %s
-''') % ((key.replace(u'_', u' ').strip() + u':').ljust(24), detail_dict[key])
+'''    %s %s
+''') % ((key.replace('_', ' ').strip() + ':').ljust(24), detail_dict[key])
             ##
-            verbage += track_details + u'\n'
+            verbage += track_details + '\n'
     #
     if logger:
         logger.info(verbage)
@@ -1330,11 +1314,11 @@ def get_mediainfo(video_file, element_filter, tracks_filter,
     tracks = {}
     #
     # Get XML from mediainfo
-    result = commandline_call(u'mediainfo',
+    result = commandline_call('mediainfo',
                 common.MEDIAINFO_XML %  video_file)
     stdout = result[1]
     logger.info(
-_(u'''mediainfo get video file details in XML format command:
+_('''mediainfo get video file details in XML format command:
 > mediainfo %s
 
 %s
@@ -1344,7 +1328,7 @@ _(u'''mediainfo get video file details in XML format command:
         # because it is needed by the program.
         # Thank you for contributing to this project.
         verbage = _(
-u'''Mediainfo failed to get track information for
+'''Mediainfo failed to get track information for
 video file "%s", aborting script.
 Error: %s
 ''') % (video_file, result[1])
@@ -1353,7 +1337,7 @@ Error: %s
         exit(int(common.JOBSTATUS().ABORTED))
     #
     # Create an etree structure from the mediainfo XML
-    tracks['etree'] = etree.fromstring(str(result[1]))
+    tracks['etree'] = etree.fromstring(result[1].encode())
     #
     # Extract some statistics etree
     tracks['general'] = tracks_filter(tracks['etree'],
@@ -1373,10 +1357,10 @@ Error: %s
     #
     ## Extract video duration
     tracks['video_duration'] = 0.0
-    if element_filter(tracks['general'], element = u'Duration'):
-        duration_element = u' ' + element_filter(tracks['general'],
-                                          element = u'Duration')[0]
-        for key in common.DURATION_REGEX.keys():
+    if element_filter(tracks['general'], element = 'Duration'):
+        duration_element = ' ' + element_filter(tracks['general'],
+                                          element = 'Duration')[0]
+        for key in list(common.DURATION_REGEX.keys()):
             match = common.DURATION_REGEX[key].match(duration_element)
             if match:
                 if len(match.groups()) > 1:
@@ -1393,7 +1377,7 @@ Error: %s
                     tracks['video_duration'] += number * 60 * 60
     #
     ## Extract track detils:
-    for track_type in common.TRACK_ELEM_DICT.keys():
+    for track_type in list(common.TRACK_ELEM_DICT.keys()):
         if tracks['total_%s' % track_type]:
             tracks['%s_details' % track_type] = []
             for track in tracks[track_type]:
@@ -1416,7 +1400,7 @@ Error: %s
             if data:
                 if data[0].endswith('pixels'):
                     data[0] = data[0].replace('pixels',
-                                    u'').replace(' ', u'').strip()
+                                    '').replace(' ', '').strip()
                 if data[0].find(' ') != -1:
                     tracks['vide_tracko_details'][key] = \
                                 data[0][:data[0].find(' ')].strip()
@@ -1428,13 +1412,13 @@ Error: %s
                 try:
                     tracks['video_track_details']['Original_frame_rate'] = \
                         element_filter(tracks['video'][0],
-                                            element = u'Frame_rate')[0]
+                                            element = 'Frame_rate')[0]
                 except IndexError:
                     # TRANSLATORS: Please leave %s as it is,
                     # because it is needed by the program.
                     # Thank you for contributing to this project.
                     verbage = _(
-u'''Mediainfo failed to find FPS video track information for
+'''Mediainfo failed to find FPS video track information for
 video file "%s". It is likely that something
 is wrong with the video file. The script will attempt to see
 if MythTV has the FPS values.
@@ -1447,7 +1431,7 @@ if MythTV has the FPS values.
                     tracks['video_track_details']['Original_frame_rate'] = \
                         tracks['video_track_details'][
                                 'Original_frame_rate'].replace(
-                                 'fps', u'').replace('.', u'').strip()
+                                 'fps', '').replace('.', '').strip()
     #
     ## Check for SRT tracks and gather info about those tracks
     ## Also check for DVB Subtitle tracks and calculate a usable ms delay
@@ -1476,7 +1460,7 @@ if MythTV has the FPS values.
                                     'Delay_relative_to_video']
             delay_time = 0
             pos_neg = 1
-            for key in common.DURATION_REGEX.keys():
+            for key in list(common.DURATION_REGEX.keys()):
                 match = common.DURATION_REGEX[key].match(duration_element)
                 if match:
                     if len(match.groups()) > 1:
@@ -1515,7 +1499,7 @@ def cleanup_working_dir(workingpath, recorded_name):
     return nothing
     '''
     #
-    for filename in glob(u'%s/%s*' % (workingpath, recorded_name, )):
+    for filename in glob('%s/%s*' % (workingpath, recorded_name, )):
         os.remove(filename)
     #
     return
@@ -1531,20 +1515,20 @@ def create_config_file():
     fileh.close()
     # Add the DVB Subtitle configuration section
     fileh = open(common.INIT_DVB_SUBTITLE_CONFIG_FILE, 'r')
-    init_config += u'\n' + (fileh.read() % \
+    init_config += '\n' + (fileh.read() % \
                 common.DEFAULT_CONFIG_SETTINGS['dvb_subtitle_defaults'])
     fileh.close()
     # Add the Remove Recoding configuration section
     fileh = open(common.INIT_REMOVE_RECORDING_CONFIG_FILE, 'r')
-    init_config += u'\n' + fileh.read()
+    init_config += '\n' + fileh.read()
     fileh.close()
     # Add the Mkvmerge User Settings configuration section
     fileh = open(common.INIT_MKVMERGE_USER_SETTINGS_CONFIG_FILE, 'r')
-    init_config += u'\n' + fileh.read()
+    init_config += '\n' + fileh.read()
     fileh.close()
     # Add the error detection User Settings configuration section
     fileh = open(common.INIT_ERROR_DETECTION_CONFIG_FILE, 'r')
-    init_config += u'\n' + fileh.read()
+    init_config += '\n' + fileh.read()
     fileh.close()
     #
     # Add the default configuration settings
@@ -1558,7 +1542,7 @@ def create_config_file():
         # Thank you for contributing to this project.
         directory, basefilename = os.path.split(common.CONFIG_FILE)
         verbage = _(
-u'''Could not create the "%s" file in directory "%s". This is likely a
+'''Could not create the "%s" file in directory "%s". This is likely a
 directory Read/Write permission issue but check the error message
 below to confirm, aborting script.
 Error: %s''') % (basefilename, directory, errmsg)
@@ -1573,7 +1557,7 @@ def add_new_cfg_section(configuration, section, cfg):
     return nothing
     '''
     err_cannot_create_cfg_file = _(
-u'''Could not create the "%s" file in directory "%s". This is likely a
+'''Could not create the "%s" file in directory "%s". This is likely a
 directory Read/Write permission issue but check the error message
 below to confirm, aborting script.
 Error: %s''')
@@ -1583,9 +1567,9 @@ Error: %s''')
     fileh.close()
     #
     fileh = open(section, 'r')
-    new_line = u''
-    if init_config[-1:] != u'\n':
-        new_line = u'\n'
+    new_line = ''
+    if init_config[-1:] != '\n':
+        new_line = '\n'
     init_config += new_line + (fileh.read() % configuration)
     fileh.close()
     #

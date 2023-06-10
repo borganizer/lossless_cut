@@ -48,8 +48,8 @@ from importcode.mythtvinterface import Mythtvinterface
 #
 try:
     from lxml import etree as etree
-except Exception, errmsg:
-    sys.stderr.write(u'''
+except Exception as errmsg:
+    sys.stderr.write('''
 Importing the "lxml" python libraries failed on
 Error: %s\n''' % errmsg)
     sys.exit(1)
@@ -65,7 +65,7 @@ for digit in etree.LIBXML_VERSION:
     VERSION += str(digit)+'.'
 VERSION = VERSION[:-1]
 if VERSION < '2.7.2':
-    sys.stderr.write(u'''
+    sys.stderr.write('''
 Error: The installed version of the "lxml" python library "libxml" version
        is too old. At least "libxml" version 2.7.2 must be installed.
        Your version is (%s).
@@ -73,7 +73,7 @@ Error: The installed version of the "lxml" python library "libxml" version
     sys.exit(1)
 #
 ## Initialize local variables
-__title__ = u"ll_report"
+__title__ = "ll_report"
 __author__ = common.__author__
 #
 __version__ = "0.1.4"
@@ -139,50 +139,50 @@ This script requires the following to be installed and accessible:
 
 ''') % (MANDITORY)
 #
-MANDITORY = (MANDITORY + "%s") % u''
+MANDITORY = (MANDITORY + "%s") % ''
 #
 ## Command line options and arguments
 PARSER = OptionParser(
-        usage=u"%prog usage: ll_report.py -fhubBAstw [parameters]\n")
+        usage="%prog usage: ll_report.py -fhubBAstw [parameters]\n")
 PARSER.add_option(  "-f", "--recordedfile", metavar="recordedfile",
                     default="", dest="recordedfile",
                     help=_(
-u'The absolute path and file name of the MythTV recording.'))
+'The absolute path and file name of the MythTV recording.'))
 PARSER.add_option(  "-b", "--bugtext", action="store_true",
                     default=False, dest="bugtext",
                     help=_(
-u'''Create a text bug report file:
+'''Create a text bug report file:
     "/current directory/videoname_LOSSLESS_BUG.txt"'''))
 PARSER.add_option(  "-A", "--all", action="store_true",
                     default=False, dest="all",
                     help=_(
-u'''Copy the whole recorded video to the bug report archive.
+'''Copy the whole recorded video to the bug report archive.
 This option overrides the 25Mg limitation and should only be used
 by the developer for problem analysis. The files would be far to
 large for being uploaded by users and likely violate copyright laws.'''))
 PARSER.add_option(  "-B", "--bugarchive", action="store_true",
                     default=False, dest="bugarchive",
                     help=_(
-u'''Create a text bug report and 25Mg sample video file:
+'''Create a text bug report and 25Mg sample video file:
     "/current directory/videoname_LOSSLESS_BUG.tar.bz2"'''))
 PARSER.add_option(  "-s", "--starttime", metavar="recordedfile",
                     default="", dest="starttime",
                     help=_(
-u'Video file sample start time in HH:MM:SS format.'))
+'Video file sample start time in HH:MM:SS format.'))
 PARSER.add_option(  "-t", "--test", action="store_true",
                     default=False, dest="test",
                     help=_(
-u"Test that the environment meets all the scripts dependencies."))
+"Test that the environment meets all the scripts dependencies."))
 PARSER.add_option(  "-u", "--usage", action="store_true",
                     default=False, dest="usage",
-                    help=_(u"Display this help/usage text and exit."))
+                    help=_("Display this help/usage text and exit."))
 PARSER.add_option(  "-v", "--version", action="store_true",
                     default=False, dest="version",
-                    help=_(u"Display version and author information"))
+                    help=_("Display version and author information"))
 PARSER.add_option(  "-w", "--wiki", action="store_true",
                     default=False, dest="wiki",
                     help=_(
-u'''Display a Wiki page table entry that can be used to identify recording
+'''Display a Wiki page table entry that can be used to identify recording
 device's whose recorded videos either work or fail with lossless_cut.py'''))
 #
 OPTS, ARGS = PARSER.parse_args()
@@ -201,16 +201,16 @@ class OutStreamEncoder(object):
     def write(self, obj):
         """Wraps the output stream, encoding Unicode strings with the
         specified encoding"""
-        if isinstance(obj, unicode):
-            try:
-                self.out.write(obj.encode(self.encoding))
-            except IOError:
-                pass
-        else:
-            try:
-                self.out.write(obj)
-            except IOError:
-                pass
+        # if isinstance(obj, unicode):
+        #     try:
+        #        self.out.write(obj.encode(self.encoding))
+        #    except IOError:
+        #        pass
+        # else:
+        try:
+            self.out.write(obj)
+        except IOError:
+            pass
 
     def __getattr__(self, attr):
         """Delegate everything but write to the stream"""
@@ -230,12 +230,12 @@ class Losslessreport(object):
         #
         try:
             self.configuration = get_config(opts, ll_report=True)
-        except Exception, errmsg:
+        except Exception as errmsg:
             sys.stderr.write(
                 # TRANSLATORS: Please leave %s as it is,
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
-_(u'''Processing the configuration file failed. Error(%s)\n''')
+_('''Processing the configuration file failed. Error(%s)\n''')
                     % errmsg)
             sys.exit(1)
         #
@@ -247,12 +247,12 @@ _(u'''Processing the configuration file failed. Error(%s)\n''')
         try:
             self.mythtvinterface = Mythtvinterface(self.logger,
                                                     self.configuration)
-        except Exception, errmsg:
+        except Exception as errmsg:
             sys.stderr.write(
                 # TRANSLATORS: Please leave %s as it is,
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
-                _(u'''Acquiring access to MythTV failed, aborting script.
+                _('''Acquiring access to MythTV failed, aborting script.
 Error(%s)\n''')
                     % errmsg)
             sys.exit(1)
@@ -277,16 +277,17 @@ Error(%s)\n''')
         try:
             self.configuration['mythutil'] = check_dependancies(
                     self.configuration)
-        except Exception, errmsg:
+        except Exception as errmsg:
             sys.stderr.write(
                 # TRANSLATORS: Please leave %s as it is,
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
-                _(u'''
+                _('''
 One or more script dependencies could not be satisfied, aborting script.
 Error(%s)\n''')
                     % errmsg)
-            sys.exit(1)
+            raise errmsg
+            # sys.exit(1)
         #
         self.mythtvinterface.stdout = sys.stdout
         self.mythtvinterface.stderr = sys.stderr
@@ -299,8 +300,8 @@ Error(%s)\n''')
                 etree.XPath(common.ELEMENTS_XPATH)
         #
         self.processing_started = datetime.now()
-        self.filename = u''
-        self.subtitles = u''
+        self.filename = ''
+        self.subtitles = ''
         # end __init__()
 #
     def ll_report(self):
@@ -314,7 +315,7 @@ Error(%s)\n''')
         if self.configuration['test']:
             self._display_variables(summary=True)
             sys.stdout.write(
-_(u'''Congratulations! All script dependencies have been satisfied.
+_('''Congratulations! All script dependencies have been satisfied.
 You are ready to create bugs or success reports for lossless_cut.py
 
 '''))
@@ -326,7 +327,7 @@ You are ready to create bugs or success reports for lossless_cut.py
                 not self.configuration['wiki']:
             sys.stdout.write(USAGE_TEXT)
             sys.stderr.write(
-_(u'''You must specify at least one report type (-b, -B, -w) on the command line!\n'''))
+_('''You must specify at least one report type (-b, -B, -w) on the command line!\n'''))
             sys.exit(1)
         #
         # Get the xml track info using mediainfo
@@ -376,9 +377,9 @@ ll_report version:          %(version)s
 ''' % self.configuration
         verbage += display_recorded_info(self.configuration, logger=False)
         #
-        sys.stdout.write(verbage + u'\n')
+        sys.stdout.write(verbage + '\n')
         #
-        self.filename = u"%(recorded_name)s_LOSSLESS_BUG.txt" % self.configuration
+        self.filename = "%(recorded_name)s_LOSSLESS_BUG.txt" % self.configuration
         fileh = open(self.filename, 'w')
         fileh.write(verbage)
         fileh.close()
@@ -388,7 +389,7 @@ ll_report version:          %(version)s
                 (_('''Bug report file "%s" created.
 You can copy and paste this report onto "http://mythtv.pastebin.com/", then post the URL
 on the MythTV mailing list with an explanation of the issues.''') % self.filename)
-                + u'\n\n')
+                + '\n\n')
         #
         return
 #
@@ -405,7 +406,7 @@ on the MythTV mailing list with an explanation of the issues.''') % self.filenam
         if not self.configuration['all']:
             # Create the 25Mg sample video file
             self.configuration['bug_sample'] = \
-u"%(recorded_name)s_LOSSLESS_BUG.%(recorded_ext)s" % self.configuration
+"%(recorded_name)s_LOSSLESS_BUG.%(recorded_ext)s" % self.configuration
             self.configuration['sample_startblock'] = 0
             if self.configuration['sample_starttime']:
                 self.configuration['sample_startblock'] = \
@@ -413,33 +414,33 @@ u"%(recorded_name)s_LOSSLESS_BUG.%(recorded_ext)s" % self.configuration
                                     self.configuration['sample_starttime'])
             arguments = common.VIDEO_SAMPLE_FILE_CMD % self.configuration
             verbage = _(
-u'''Creating a 25Mg video sample file with the command below, please wait ...
+'''Creating a 25Mg video sample file with the command below, please wait ...
 dd %s
 '''  % arguments)
             self.logger.info(verbage)
-            sys.stdout.write(verbage + u'\n')
+            sys.stdout.write(verbage + '\n')
             #
-            result = commandline_call(u'dd', arguments)
+            result = commandline_call('dd', arguments)
             if not result[0]:
                 if result[1].find('25 MB') == -1:
                     # TRANSLATORS: Please leave %s as it is,
                     # because it is needed by the program.
                     # Thank you for contributing to this project.
                     verbage = \
-        _(u'''dd could not make the sample video file, aborting script.
+        _('''dd could not make the sample video file, aborting script.
 Error: %s''') % (result[1])
                     self.logger.critical(verbage)
-                    sys.stderr.write(verbage + u'\n')
+                    sys.stderr.write(verbage + '\n')
                     exit(1)
         #
         # Get the relevant database records
         verbage = _(
-u'''Getting the relevant database records for this recording, please wait ...
+'''Getting the relevant database records for this recording, please wait ...
 ''')
         self.logger.info(verbage)
-        sys.stdout.write(verbage + u'\n')
+        sys.stdout.write(verbage + '\n')
         pickle_filename = \
-                u"%(recorded_name)s_LOSSLESS_BUG.pickle" % self.configuration
+                "%(recorded_name)s_LOSSLESS_BUG.pickle" % self.configuration
         records = self.mythtvinterface.get_all_recording_data()
         # Add the exact filename and path to the archive
         if self.configuration['all']:
@@ -466,33 +467,33 @@ u'''Getting the relevant database records for this recording, please wait ...
         # Create the tar.gz file containing the bug sample video,
         # text report and database records pickle file
         verbage = _(
-u'''Creating the bug report archive file, please wait ...
+'''Creating the bug report archive file, please wait ...
 ''')
         self.logger.info(verbage)
-        sys.stdout.write(verbage + u'\n')
-        files_to_tar = glob(u'%(recorded_name)s_LOSSLESS_BUG.*' %
+        sys.stdout.write(verbage + '\n')
+        files_to_tar = glob('%(recorded_name)s_LOSSLESS_BUG.*' %
                         self.configuration)
         #
         # If there is a log file then include it in the archive
         logfile = os.path.join(self.configuration['logpath'],
-                            self.configuration['recorded_name'] + u'.log')
+                            self.configuration['recorded_name'] + '.log')
         if os.path.isfile(logfile):
             files_to_tar.append(logfile)
         else:
             sys.stderr.write('''There is no associated log file "%s"
-to add to the bug report archive.''' % logfile + u'\n\n')
+to add to the bug report archive.''' % logfile + '\n\n')
         #
         # If the -A option was selcted then copy the whole
         # recorded video file to the archive.
         if self.configuration['all']:
             files_to_tar.append(self.configuration['recordedfile'])
             sys.stderr.write(_(
-u'''The whole recorded video file will be add to the bug report archive:
+'''The whole recorded video file will be add to the bug report archive:
 "%s"
 This will take several minutes, please wait ...''') %
-            self.configuration['recordedfile'] + u'\n\n')
+            self.configuration['recordedfile'] + '\n\n')
         #
-        tar_filename = u'%(recorded_name)s_LOSSLESS_BUG.tar.bz2' % \
+        tar_filename = '%(recorded_name)s_LOSSLESS_BUG.tar.bz2' % \
                         self.configuration
         tar = tarfile.open(tar_filename, 'w:bz2')
         for filename in files_to_tar:
@@ -507,11 +508,11 @@ This will take several minutes, please wait ...''') %
             os.remove(self.configuration['bug_sample'])
         #
         sys.stdout.write((_(
-u'''Bug report file "%s" created.
+'''Bug report file "%s" created.
 You can upload archive file to a file site such as mediafire.com, then post
 the download URL on the MythTV mailing list with an explanation of the issues.
 ''') % tar_filename)
-            + u'\n')
+            + '\n')
         #
         return
 #
@@ -524,7 +525,7 @@ the download URL on the MythTV mailing list with an explanation of the issues.
         #
         encodes = {}
         for key in common.TRACK_DISPLAY_ORDER:
-            encodes[key] = u''
+            encodes[key] = ''
         #
         ## Build track by track details
         #
@@ -532,25 +533,25 @@ the download URL on the MythTV mailing list with an explanation of the issues.
             if self.configuration['trackinfo']['total_%s' % track_type] == 0:
                 continue
             #
-            encodes[track_type] = u''
+            encodes[track_type] = ''
             for detail_dict in self.configuration['trackinfo'][
                                             '%s_details' % track_type]:
-                track_details = u''
+                track_details = ''
                 for key in common.WIKI_TRACK_ELEM_DICT[track_type]:
                     if not detail_dict[key]:
                         continue
                     if track_details:
-                        track_details += u' '
-                    if key == u"Codec_ID":
-                        track_details += _(u'''codec-%s''') % (
+                        track_details += ' '
+                    if key == "Codec_ID":
+                        track_details += _('''codec-%s''') % (
                                                     detail_dict[key])
                     else:
-                        track_details += _(u'''%s''') % (detail_dict[key])
+                        track_details += _('''%s''') % (detail_dict[key])
                 #
                 if encodes[track_type].find(track_details.strip()) != -1:
                     continue
                 if encodes[track_type]:
-                    encodes[track_type] += u', '
+                    encodes[track_type] += ', '
                 encodes[track_type] += track_details.strip()
         #
         wiki_table_row = common.WIKI_FIRST_COLUMN
@@ -561,19 +562,19 @@ the download URL on the MythTV mailing list with an explanation of the issues.
             wiki_table_row += common.WIKI_TABLE_COLUMN % encodes[track_type]
         #
         if self.configuration['bugtext'] or self.configuration['bugarchive']:
-            verbage = _(u'''At: %s
+            verbage = _('''At: %s
 Please replace "Manufacturer Name" and "Device Model" with your specific info,
 then update the Loss Less Cut wiki's Unsupported device table by cutting and
 pasting the following text lines as a table row:
 %s''') % (common.WIKI_UNSUPPORTED_DEVICE_TABLE_URL, wiki_table_row)
         else:
-            verbage = _(u'''At: %s
+            verbage = _('''At: %s
 Please replace "Manufacturer Name" and "Device Model" with your specific info,
 then update the Loss Less Cut wiki's Supported device table by cutting and
 pasting the following text lines as a table row:
 %s''') % (common.WIKI_SUPPORTED_DEVICE_TABLE_URL, wiki_table_row)
         #
-        sys.stdout.write(verbage + u'\n\n')
+        sys.stdout.write(verbage + '\n\n')
         #
         return
 #
@@ -587,7 +588,7 @@ pasting the following text lines as a table row:
             # TRANSLATORS: Please leave %s as it is,
             # because it is needed by the program.
             # Thank you for contributing to this project.
-_(u'''End of report creation for "%s" at: %s'''
+_('''End of report creation for "%s" at: %s'''
 ) % (self.configuration['recordedfile'],
             datetime.now().strftime(common.LL_START_END_FORMAT)))
         #
@@ -608,7 +609,7 @@ _(u'''End of report creation for "%s" at: %s'''
         # because it is needed by the program.
         # Thank you for contributing to this project.
         verbage = \
-                _(u'''
+                _('''
 These are the variables and options to be used when performing a
 loss less cut of a MythTV recorded video:
 
@@ -642,7 +643,7 @@ if __name__ == "__main__":
         # TRANSLATORS: Please leave %s as it is,
         # because it is needed by the program.
         # Thank you for contributing to this project.
-        sys.stdout.write(_(u"""
+        sys.stdout.write(_("""
 Title: (%s); Version: description(%s); Author: (%s)
 %s
 
@@ -662,7 +663,7 @@ Title: (%s); Version: description(%s); Author: (%s)
         # TRANSLATORS: Please leave %s as it is,
         # because it is needed by the program.
         # Thank you for contributing to this project.
-        sys.stderr.write(_(u"The recorded file (%s) does not exist.\n%s\n"
+        sys.stderr.write(_("The recorded file (%s) does not exist.\n%s\n"
                             ) % (OPTS.recordedfile, MANDITORY))
         sys.exit(0)
     #
@@ -673,11 +674,11 @@ Title: (%s); Version: description(%s); Author: (%s)
         try:
             if not os.path.isdir(common.CONFIG_DIR):
                 create_cachedir(common.CONFIG_DIR)
-        except Exception, errmsg:
+        except Exception as errmsg:
             # TRANSLATORS: Please leave %s as it is,
             # because it is needed by the program.
             # Thank you for contributing to this project.
-            sys.stderr.write(_(u'''Could not create the directory "%s" to
+            sys.stderr.write(_('''Could not create the directory "%s" to
 copy the file "%s" to "%s", aborting script.
 ''') % (common.CONFIG_DIR, common.INIT_CONFIG_FILE, common.CONFIG_FILE))
             exit(1)
@@ -685,7 +686,7 @@ copy the file "%s" to "%s", aborting script.
         # Initialize the new configuration with default values file
         try:
             create_config_file()
-        except IOError, errmsg:
+        except IOError as errmsg:
             sys.stderr.write(errmsg)
             exit(1)
     #

@@ -1,4 +1,4 @@
-Usage: lossless_cut.py usage: lossless_cut.py -aCDefghujklmrsStTvXw [parameters]
+Usage: lossless_cut.py usage: lossless_cut.py -aCDefghujklmrsPStTvXw [parameters]
 
 
 Options:
@@ -40,6 +40,7 @@ Options:
                         during processing but exit before processing begins.
                         Used this for debugging. No changes to the mpg file
                         occur.
+  -P, --passthrough     Passthrough, no subtitle processing
   -S, --noextratracks   Do not include any subtitle or secondary audio tracks.
   -t, --test            Test that the environment meets all the scripts
                         dependencies.

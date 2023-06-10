@@ -44,8 +44,8 @@ from importcode.mythtvinterface import Mythtvinterface
 #
 try:
     from lxml import etree as etree
-except Exception, errmsg:
-    sys.stderr.write(u'''
+except Exception as errmsg:
+    sys.stderr.write('''
 Importing the "lxml" python libraries failed on
 Error: %s\n''' % errmsg)
     sys.exit(int(common.JOBSTATUS().ABORTED))
@@ -61,7 +61,7 @@ for digit in etree.LIBXML_VERSION:
     VERSION += str(digit)+'.'
 VERSION = VERSION[:-1]
 if VERSION < '2.7.2':
-    sys.stderr.write(u'''
+    sys.stderr.write('''
 Error: The installed version of the "lxml" python library "libxml" version
        is too old. At least "libxml" version 2.7.2 must be installed.
        Your version is (%s).
@@ -69,7 +69,7 @@ Error: The installed version of the "lxml" python library "libxml" version
     sys.exit(int(common.JOBSTATUS().ABORTED))
 #
 ## Initialize local variables
-__title__ = u"keyframe_adjust.py"
+__title__ = "keyframe_adjust.py"
 __author__ = common.__author__
 #
 __version__ = "0.1.4"
@@ -142,43 +142,43 @@ This script requires the following to be installed and accessible:
 
 ''') % (MANDITORY)
 #
-MANDITORY = (MANDITORY + "%s") % u''
+MANDITORY = (MANDITORY + "%s") % ''
 #
 ## Command line options and arguments
 PARSER = OptionParser(
-        usage=u"%prog usage: keyframe_adjust.py -fghuklstv [parameters]\n")
+        usage="%prog usage: keyframe_adjust.py -fghuklstv [parameters]\n")
 PARSER.add_option(  "-f", "--recordedfile", metavar="recordedfile",
                     default="", dest="recordedfile",
                     help=_(
-u'The absolute path and file name of the MythTV recording.'))
+'The absolute path and file name of the MythTV recording.'))
 PARSER.add_option(  "-g", "--gencutlist", action="store_true",
                     default=False, dest="gencutlist",
                     help=_(
-u"Generate a cut list if one does not exist but there is a skip list."))
+"Generate a cut list if one does not exist but there is a skip list."))
 PARSER.add_option(  "-k", "--keeplog", action="store_true",
                     default=False, dest="keeplog",
                     help=_(
-u"Keep the log file after the userjob has completed successfully."))
+"Keep the log file after the userjob has completed successfully."))
 PARSER.add_option(  "-l", "--logpath", metavar="logpath",
                     default="", dest="logpath",
                     help=_(
-u'Specify a directory path to save the jobs log file'))
+'Specify a directory path to save the jobs log file'))
 PARSER.add_option(  "-s", "--summary", action="store_true",
                     default=False, dest="summary",
                     help=_(
-u'''Display a summary of the options that would be used during processing
+'''Display a summary of the options that would be used during processing
 but exit before processing begins. Used this for debugging. No changes
 to the mpg file occur.'''))
 PARSER.add_option(  "-t", "--test", action="store_true",
                     default=False, dest="test",
                     help=_(
-u"Test that the environment meets all the scripts dependencies."))
+"Test that the environment meets all the scripts dependencies."))
 PARSER.add_option(  "-u", "--usage", action="store_true",
                     default=False, dest="usage",
-                    help=_(u"Display this help/usage text and exit."))
+                    help=_("Display this help/usage text and exit."))
 PARSER.add_option(  "-v", "--version", action="store_true",
                     default=False, dest="version",
-                    help=_(u"Display version and author information"))
+                    help=_("Display version and author information"))
 #
 OPTS, ARGS = PARSER.parse_args()
 #
@@ -196,16 +196,16 @@ class OutStreamEncoder(object):
     def write(self, obj):
         """Wraps the output stream, encoding Unicode strings with the
         specified encoding"""
-        if isinstance(obj, unicode):
-            try:
-                self.out.write(obj.encode(self.encoding))
-            except IOError:
-                pass
-        else:
-            try:
-                self.out.write(obj)
-            except IOError:
-                pass
+        # if isinstance(obj, unicode):
+        #     try:
+        #        self.out.write(obj.encode(self.encoding))
+        #    except IOError:
+        #        pass
+        # else:
+        try:
+            self.out.write(obj)
+        except IOError:
+            pass
 
     def __getattr__(self, attr):
         """Delegate everything but write to the stream"""
@@ -228,12 +228,12 @@ class Keyframeadjust(object):
         #
         try:
             self.configuration = get_config(opts, keyframe_adjust=True)
-        except Exception, errmsg:
+        except Exception as errmsg:
             sys.stderr.write(
                 # TRANSLATORS: Please leave %s as it is,
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
-_(u'''Processing the configuration file failed. Error(%s)\n''')
+_('''Processing the configuration file failed. Error(%s)\n''')
                     % errmsg)
             sys.exit(int(self.jobstatus.ABORTED))
         #
@@ -245,15 +245,16 @@ _(u'''Processing the configuration file failed. Error(%s)\n''')
         try:
             self.mythtvinterface = Mythtvinterface(self.logger,
                                                     self.configuration)
-        except Exception, errmsg:
+        except Exception as errmsg:
             sys.stderr.write(
                 # TRANSLATORS: Please leave %s as it is,
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
-                _(u'''Acquiring access to MythTV failed, aborting script.
+                _('''Acquiring access to MythTV failed, aborting script.
 Error(%s)\n''')
                     % errmsg)
-            sys.exit(int(self.jobstatus.ABORTED))
+            raise errmsg
+            # sys.exit(int(self.jobstatus.ABORTED))
         #
         ## Set if mythtv v0.24 is installed
         if self.mythtvinterface.OWN_VERSION[1] == 24:
@@ -274,16 +275,17 @@ Error(%s)\n''')
         try:
             self.configuration['mythutil'] = check_dependancies(
                     self.configuration)
-        except Exception, errmsg:
+        except Exception as errmsg:
             sys.stderr.write(
                 # TRANSLATORS: Please leave %s as it is,
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
-                _(u'''
+                _('''
 One or more script dependencies could not be satisfied, aborting script.
 Error(%s)\n''')
                     % errmsg)
-            sys.exit(int(self.jobstatus.ABORTED))
+            raise errmsg
+            # sys.exit(int(self.jobstatus.ABORTED))
         #
         self.mythtvinterface.stdout = sys.stdout
         self.mythtvinterface.stderr = sys.stderr
@@ -319,7 +321,7 @@ Error(%s)\n''')
         if self.configuration['test']:
             self._display_variables(summary=True)
             sys.stdout.write(
-_(u'''Congratulations! All script dependencies have been satisfied.
+_('''Congratulations! All script dependencies have been satisfied.
 You are ready to adjust the skip and/or cut list frame numbers to keyframes
 on a MythTV recordings.
 
@@ -330,7 +332,7 @@ on a MythTV recordings.
             # TRANSLATORS: Please leave %s as it is,
             # because it is needed by the program.
             # Thank you for contributing to this project.
-_(u'''Start skip and/or cut list frame number adjustments for "%s" at: %s'''
+_('''Start skip and/or cut list frame number adjustments for "%s" at: %s'''
 ) % (self.configuration['recordedfile'],
             self.processing_started.strftime(common.LL_START_END_FORMAT)))
         #
@@ -358,7 +360,7 @@ _(u'''Start skip and/or cut list frame number adjustments for "%s" at: %s'''
             # TRANSLATORS: Please leave %s as it is,
             # because it is needed by the program.
             # Thank you for contributing to this project.
-_(u'''End of skip and/or cut list frame number adjustments for "%s" at: %s'''
+_('''End of skip and/or cut list frame number adjustments for "%s" at: %s'''
 ) % (self.configuration['recordedfile'],
             datetime.now().strftime(common.LL_START_END_FORMAT)))
         #
@@ -379,7 +381,7 @@ _(u'''End of skip and/or cut list frame number adjustments for "%s" at: %s'''
         # because it is needed by the program.
         # Thank you for contributing to this project.
         verbage = \
-                _(u'''
+                _('''
 These are the variables and options to be used when performing a
 loss less cut of a MythTV recorded video:
 
@@ -413,7 +415,7 @@ if __name__ == "__main__":
         # TRANSLATORS: Please leave %s as it is,
         # because it is needed by the program.
         # Thank you for contributing to this project.
-        sys.stdout.write(_(u"""
+        sys.stdout.write(_("""
 Title: (%s); Version: description(%s); Author: (%s)
 %s
 
@@ -433,7 +435,7 @@ Title: (%s); Version: description(%s); Author: (%s)
         # TRANSLATORS: Please leave %s as it is,
         # because it is needed by the program.
         # Thank you for contributing to this project.
-        sys.stderr.write(_(u"The recorded file (%s) does not exist.\n%s\n"
+        sys.stderr.write(_("The recorded file (%s) does not exist.\n%s\n"
                             ) % (OPTS.recordedfile, MANDITORY))
         sys.exit(int(common.JOBSTATUS().ABORTED))
     #
@@ -444,11 +446,11 @@ Title: (%s); Version: description(%s); Author: (%s)
         try:
             if not os.path.isdir(common.CONFIG_DIR):
                 create_cachedir(common.CONFIG_DIR)
-        except Exception, errmsg:
+        except Exception as errmsg:
             # TRANSLATORS: Please leave %s as it is,
             # because it is needed by the program.
             # Thank you for contributing to this project.
-            sys.stderr.write(_(u'''Could not create the directory "%s" to
+            sys.stderr.write(_('''Could not create the directory "%s" to
 copy the file "%s" to "%s", aborting script.
 ''') % (common.CONFIG_DIR, common.INIT_CONFIG_FILE, common.CONFIG_FILE))
             exit(int(common.JOBSTATUS().ABORTED))
@@ -456,7 +458,7 @@ copy the file "%s" to "%s", aborting script.
         # Initialize the new configuration with default values file
         try:
             create_config_file()
-        except IOError, errmsg:
+        except IOError as errmsg:
             sys.stderr.write(errmsg)
             exit(int(common.JOBSTATUS().ABORTED))
     #

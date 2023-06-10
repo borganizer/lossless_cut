@@ -84,13 +84,14 @@ all MythTV interface functionality.
 
 # Common function imports
 import os
+import sys
 import time
 from socket import gethostname
 
 # Indicator specific imports
-from utilities import set_language, commandline_call, cleanup_working_dir, \
+from .utilities import set_language, commandline_call, cleanup_working_dir, \
     is_not_punct_char, is_punct_char
-import common
+from . import common
 
 ## Local variables
 # Language translation specific to this desktop
@@ -117,54 +118,54 @@ class Mythtvinterface(object):
                 # TRANSLATORS: Please leave %s as it is,
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
-                _(u'MythTV backend connection failed, error(%s)'),
+                _('MythTV backend connection failed, error(%s)'),
             'BackendConnectionAttempt':
                 # TRANSLATORS: Please leave %s as it is,
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
-                 _(u'MythTV backend connection attempt, error(%s)'),
+                 _('MythTV backend connection attempt, error(%s)'),
             'ConfigError':
                 # TRANSLATORS: Please leave %s as it is,
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
-                 _(u'Check that (%s) is correctly configured'),
+                 _('Check that (%s) is correctly configured'),
             'ConfigMissing':
                 # TRANSLATORS: Please leave %s as it is,
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
-                 _(u'A correctly configured (%s) file must exist'),
+                 _('A correctly configured (%s) file must exist'),
             'CreateInstance':
                 # TRANSLATORS: Please leave %s as it is,
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
-                 _(u'''Creating an instance caused an error in:
+                 _('''Creating an instance caused an error in:
 MythDB, error(%s)'''),
             'BindingsError':
                 # TRANSLATORS: Please leave %s as it is,
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
-            _(u'MythTV python bindings could not be imported, error(%s)'),
+            _('MythTV python bindings could not be imported, error(%s)'),
             'TVGrabberError':
                 # TRANSLATORS: Please leave %s as it is,
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
-            _(u'TV Grabber issue, error(%s)'),
+            _('TV Grabber issue, error(%s)'),
             'MovieGrabberError':
                 # TRANSLATORS: Please leave %s as it is,
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
-            _(u'Movie grabber issue, error(%s)'),
+            _('Movie grabber issue, error(%s)'),
             'VersionError1':
                 # TRANSLATORS: Please leave %s as it is,
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
-_(u'''Lossless Cut supports MythTV versions 0.24+fixes and higher.
+_('''Lossless Cut supports MythTV versions 0.24+fixes and higher.
 Your version is "%s". You will need to upgrade your MythTV install.'''),
             'VersionError2':
                 # TRANSLATORS: Please leave %s as it is,
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
-_(u'''Lossless Cut cannot support your pre-release version of MythTV.
+_('''Lossless Cut cannot support your pre-release version of MythTV.
 Your version is "%s".
 You will need to upgrade your MythTV install to at least a v0.%d+Fixes release.'''),
         }
@@ -195,7 +196,7 @@ You will need to upgrade your MythTV install to at least a v0.%d+Fixes release.'
                 pre = '0.'
             else:
                 pre = 'pre-0.'
-            self.configuration['mythtv_version'] = u'%s%d.%d' % (pre,
+            self.configuration['mythtv_version'] = '%s%d.%d' % (pre,
                     self.OWN_VERSION[1], self.OWN_VERSION[3])
             #
             ## Lossless Cut only supports MythTV v0.24+fixes and higher
@@ -298,10 +299,10 @@ You will need to upgrade your MythTV install to at least a v0.%d+Fixes release.'
             # because it is needed by the program.
             # Thank you for contributing to this project.
             verbage = _(
-u'''There is no MythTV recorded record for video
+'''There is no MythTV recorded record for video
 file "%s", aborting script.''') % self.configuration['base_name']
             self.logger.critical(verbage)
-            self.stderr.write(verbage + u'\n')
+            self.stderr.write(verbage + '\n')
             #
             ## Remove this recording's files from the working directory
             cleanup_working_dir(self.configuration['workpath'],
@@ -318,10 +319,10 @@ file "%s", aborting script.''') % self.configuration['base_name']
             # because it is needed by the program.
             # Thank you for contributing to this project.
             verbage = _(
-u'''There is no MythTV recordedprogram record for the video
+'''There is no MythTV recordedprogram record for the video
 file "%s", aborting script.''') % self.configuration['base_name']
             self.logger.critical(verbage)
-            self.stderr.write(verbage + u'\n')
+            self.stderr.write(verbage + '\n')
             #
             ## Remove this recording's files from the working directory
             cleanup_working_dir(self.configuration['workpath'],
@@ -339,7 +340,7 @@ file "%s", aborting script.''') % self.configuration['base_name']
         ## Save specific data:
         self.configuration['chanid'] = self.recorded.chanid
         self.configuration['starttime'] = self.recorded.starttime
-        self.configuration['director'] = u''
+        self.configuration['director'] = ''
         self.configuration['genre'] = self._get_program_genre()
         self.configuration['title'] = self.recorded.title
         self.configuration['series'] = self.recorded.title
@@ -423,12 +424,12 @@ file "%s", aborting script.''') % self.configuration['base_name']
                         self.configuration['tvseries_format'] % \
                                                     self.configuration
             else:
-                self.configuration['mkv_title'] = u'%s: %s' % (
+                self.configuration['mkv_title'] = '%s: %s' % (
                                             self.configuration['title'],
                                             self.configuration['subtitle'])
         elif self.recorded_program.category_type == 'series' and \
                 not self.configuration['subtitle']:
-            self.configuration['mkv_title'] = u'%s' % (
+            self.configuration['mkv_title'] = '%s' % (
                                             self.configuration['title'],)
         else:
             if self.configuration['releasedate'] and \
@@ -442,12 +443,13 @@ file "%s", aborting script.''') % self.configuration['base_name']
         # Remove any quotes from the description which may
         # impact the mkvmerge command line
         self.configuration['mkv_description'] = \
-                    self.configuration['description'].replace(u'"', u"'")
+                    self.configuration['description'].replace('"', "'")
         #
         ## Set mythvidexport format and information
         self.configuration['contenttype'] = 2 # Default to a TV show
         if self.recorded_program.category_type == 'series':
             if self.configuration['subtitle'] and \
+                        isinstance(self.configuration['episode_num'], int) and \
                         self.configuration['episode_num'] > 0:
                 self.configuration['export_format'] = \
                             self.configuration['TVexportfmt']
@@ -458,9 +460,9 @@ file "%s", aborting script.''') % self.configuration['base_name']
                 if not self.configuration['subtitle']:
                     self.configuration['export_format'] = \
                         self.configuration['export_format'].replace(
-                            u':', u'').replace(
-                            u'-', u'').replace(
-                            u'%SUBTITLE%', u'').strip()
+                            ':', '').replace(
+                            '-', '').replace(
+                            '%SUBTITLE%', '').strip()
         elif self.recorded_program.category_type == 'movie':
             self.configuration['contenttype'] = 1 # Set to movie
             if self.configuration['releasedate']:
@@ -469,7 +471,7 @@ file "%s", aborting script.''') % self.configuration['base_name']
             else:
                 self.configuration['export_format'] = \
                         self.configuration['MOVIEexportfmt'].replace(
-                                        u'(%(releasedate)s)', u'').strip()
+                                        '(%(releasedate)s)', '').strip()
         else:
             self.configuration['export_format'] = \
                             self.configuration['GENERICexportfmt']
@@ -482,15 +484,15 @@ file "%s", aborting script.''') % self.configuration['base_name']
         if self.configuration['export_format'].find('%GENRE%') != -1 and \
                 not self.configuration['genre'] and \
                 self.configuration['mythvideo_export']:
-            self.configuration['genre'] = u'Unknown'
+            self.configuration['genre'] = 'Unknown'
             verbage = _(
-u'''The export path and file name format for this recording is:
+'''The export path and file name format for this recording is:
 "%(export_format)s" but no genre can be located, therefore "Unknown"
 will be used.
 ''') % self.configuration
             self.logger.info(verbage)
-            self.stderr.write(verbage + u'\n')
-            self.configuration['genre'] = u"Unknown"
+            self.stderr.write(verbage + '\n')
+            self.configuration['genre'] = "Unknown"
         #
         if not self.configuration['director']:
             for member in self.recorded.cast:
@@ -521,7 +523,7 @@ will be used.
         #
         ## Log what metadata to identify this video has been found
         verbage = _(
-u'''The following metadata has been found for this recorded video:
+'''The following metadata has been found for this recorded video:
   Internet Reference number: %(inetref)s
   Title: "%(series)s", Subtitle: "%(subtitle)s"
   Series number: %(season_num)s, Episode number: %(episode_num)s
@@ -550,10 +552,10 @@ u'''The following metadata has been found for this recorded video:
                             self.configuration
             result = commandline_call(self.configuration['mythutil'],
                                             arguments)
-            stdout = u''
+            stdout = ''
             if self.configuration['verbose']:
                 stdout = result[1]
-            self.logger.info(_(u'''%s generate cut list command:
+            self.logger.info(_('''%s generate cut list command:
 > %s %s
 
 %s''') % (self.configuration['mythutil'], self.configuration['mythutil'],
@@ -563,10 +565,10 @@ u'''The following metadata has been found for this recorded video:
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
                 verbage = \
-_(u'''%s could not generate the cut list, aborting script.
+_('''%s could not generate the cut list, aborting script.
 Error: %s''') % (self.configuration['mythutil'], result[1])
                 self.logger.critical(verbage)
-                self.stderr.write(verbage + u'\n')
+                self.stderr.write(verbage + '\n')
                 #
                 ## Remove this recording's files from the working directory
                 cleanup_working_dir(self.configuration['workpath'],
@@ -634,12 +636,12 @@ Error: %s''') % (self.configuration['mythutil'], result[1])
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
                 verbage = _(
-u'''This MythTV recording has no markup table FPS (frames per second).
+'''This MythTV recording has no markup table FPS (frames per second).
 It is likely that the markup table records for this recording is
 invalid, aborting script.
 ''')
                 self.logger.critical(verbage)
-                self.stderr.write(verbage + u'\n')
+                self.stderr.write(verbage + '\n')
                 #
                 ## Remove this recording's files from the working directory
                 cleanup_working_dir(self.configuration['workpath'],
@@ -683,12 +685,12 @@ invalid, aborting script.
             # because it is needed by the program.
             # Thank you for contributing to this project.
             verbage = \
-_(u'''This MythTV recording has no recordedseek table first keyframe record.
+_('''This MythTV recording has no recordedseek table first keyframe record.
 It is likely that the recordedseek table records for this recording is
 invalid, aborting script.
 ''')
             self.logger.critical(verbage)
-            self.stderr.write(verbage + u'\n')
+            self.stderr.write(verbage + '\n')
             #
             ## Remove this recording's files from the working directory
             cleanup_working_dir(self.configuration['workpath'],
@@ -706,12 +708,12 @@ invalid, aborting script.
             # because it is needed by the program.
             # Thank you for contributing to this project.
             verbage = _(
-u'''This MythTV recording has no recordedseek table last keyframe record.
+'''This MythTV recording has no recordedseek table last keyframe record.
 It is likely that the recordedseek table records for this recording is
 invalid, aborting script.
 ''')
             self.logger.critical(verbage)
-            self.stderr.write(verbage + u'\n')
+            self.stderr.write(verbage + '\n')
             #
             ## Remove this recording's files from the working directory
             cleanup_working_dir(self.configuration['workpath'],
@@ -862,7 +864,7 @@ invalid, aborting script.
             self.configuration['keyframe_cuts'] = cutlist
         #
         if not self.keyframe_adjust:
-            verbage = _(u'''
+            verbage = _('''
 Cutlist:
     Original:           (%(rawcutlist)s)
     Inclusive:          (%(pre_massage_cutlist)s)
@@ -883,10 +885,10 @@ Cutlist:
         # Clear the skip list
         arguments = common.CLEAR_SKIPLIST % self.configuration
         result = commandline_call(self.configuration['mythutil'], arguments)
-        stdout = u''
+        stdout = ''
         if self.configuration['verbose']:
             stdout = result[1]
-        self.logger.info(_(u'''%s clear cut list command:
+        self.logger.info(_('''%s clear cut list command:
 > %s %s
 
 %s
@@ -897,7 +899,7 @@ Cutlist:
             # because it is needed by the program.
             # Thank you for contributing to this project.
             verbage = \
-_(u'''%(mythutil)s could not clear the skiplist, aborting script.
+_('''%(mythutil)s could not clear the skiplist, aborting script.
 Error: %s
 ''') % (self.configuration, result[1])
             self.logger.critical(verbage)
@@ -915,7 +917,7 @@ Error: %s
         self.recorded.commflagged = 0
         self.recorded.filesize = self.configuration['filesize']
         self.recorded.basename = self.configuration['recorded_name'] + \
-                                                            u'.mkv'
+                                                            '.mkv'
         #
         ## Get the mkv video's duration for the recorded markup
         ## type 33 record update
@@ -986,14 +988,14 @@ Error: %s
         #result = commandline_call('mkvinfo',
         #                u'"%s"' % self.configuration['mkv_file'])
 
-        arguments = u'"--Output=General;%%Duration%%" "%(mkv_file)s"'
+        arguments = '"--Output=General;%%Duration%%" "%(mkv_file)s"'
         result = commandline_call('mediainfo',
                                   arguments % self.configuration)
-        stdout = u''
+        stdout = ''
         if self.configuration['verbose']:
             stdout = result[1]
             self.logger.info(
-_(u'''mediainfo used to find final mkv file playback duration (milliseconds):
+_('''mediainfo used to find final mkv file playback duration (milliseconds):
 > mkvinfo "%s"
 %s
 ''') % (self.configuration['mkv_file'], stdout))
@@ -1002,10 +1004,10 @@ _(u'''mediainfo used to find final mkv file playback duration (milliseconds):
             # because it is needed by the program.
             # Thank you for contributing to this project.
             verbage = \
-_(u'''mediainfo could not get mkv file information, aborting script.
+_('''mediainfo could not get mkv file information, aborting script.
 Error: %s''') % (result[1])
             self.logger.critical(verbage)
-            self.stderr.write(verbage + u'\n')
+            self.stderr.write(verbage + '\n')
             #
             ## Remove this recording's files from the working directory
             cleanup_working_dir(self.configuration['workpath'],
@@ -1043,10 +1045,10 @@ Error: %s''') % (result[1])
             # because it is needed by the program.
             # Thank you for contributing to this project.
             verbage = _(
-u'''There is no MythTV recorded record for video
+'''There is no MythTV recorded record for video
 file "%s", aborting script.''') % self.configuration['base_name']
             self.logger.critical(verbage)
-            self.stderr.write(verbage + u'\n')
+            self.stderr.write(verbage + '\n')
             #
             ## Remove this recording's files from the working directory
             cleanup_working_dir(self.configuration['workpath'],
@@ -1060,8 +1062,8 @@ file "%s", aborting script.''') % self.configuration['base_name']
         self.configuration['starttime'] = self.recorded.starttime
         self.configuration['progstart'] = self.recorded.progstart
         #
-        if not self.configuration.has_key('SQL_starttime') or \
-                not self.configuration.has_key('SQL_progstart'):
+        if 'SQL_starttime' not in self.configuration or \
+                'SQL_progstart' not in self.configuration:
             self._set_sql_starttime()
         #
         ## Get the skip and cut list values
@@ -1074,10 +1076,10 @@ file "%s", aborting script.''') % self.configuration['base_name']
             # because it is needed by the program.
             # Thank you for contributing to this project.
             verbage = _(
-u'''There are no skip or cut lists for video
+'''There are no skip or cut lists for video
 file "%s", nothing for this script to do.''') % self.configuration['base_name']
             self.logger.info(verbage)
-            self.stdout.write(verbage + u'\n')
+            self.stdout.write(verbage + '\n')
             return
         #
         ## Determine fps (frames per second) and the first and last frame
@@ -1091,15 +1093,15 @@ file "%s", nothing for this script to do.''') % self.configuration['base_name']
         for frame_list in [skiplist, cutlist]:
             #
             if skip_done:
-                which_list = u'Cut list'
+                which_list = 'Cut list'
             else:
-                which_list = u'Skip list'
+                which_list = 'Skip list'
             #
             if not frame_list:
                 verbage = _(
-        u'''The %s is empty''') % which_list
+        '''The %s is empty''') % which_list
                 self.logger.info(verbage)
-                self.stderr.write(verbage + u'\n')
+                self.stderr.write(verbage + '\n')
                 skip_done = True
                 continue
             if not skip_done:
@@ -1134,20 +1136,20 @@ file "%s", nothing for this script to do.''') % self.configuration['base_name']
                     change = True
             if not change:
                 verbage = _(
-    u'''The %s already has keyframe values''') % which_list
+    '''The %s already has keyframe values''') % which_list
                 self.logger.info(verbage)
-                self.stdout.write(verbage + u'\n')
+                self.stdout.write(verbage + '\n')
                 skip_done = True
                 continue
             #            #
             verbage = _(
-u'''The %s and it's equivalent keyframe values:
+'''The %s and it's equivalent keyframe values:
 %s:            %s
 %s keyframes:  %s
 ''') % (which_list, which_list, frame_list,
                 which_list, self.configuration['keyframe_cuts'])
             self.logger.info(verbage)
-            self.stdout.write(verbage + u'\n')
+            self.stdout.write(verbage + '\n')
             #
             for count in range(len(self.configuration['keyframe_cuts'])):
                 for count in range(len(frame_list)):
@@ -1174,7 +1176,7 @@ u'''The %s and it's equivalent keyframe values:
             result = commandline_call(
                             self.configuration['mythutil'], arguments)
             #
-            self.logger.info(_(u'''%s Generate the cut list command:
+            self.logger.info(_('''%s Generate the cut list command:
 > %s %s
 
 %s
@@ -1185,7 +1187,7 @@ u'''The %s and it's equivalent keyframe values:
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
                 verbage = \
-_(u'''%(mythutil)s could not Generate the cutlist, aborting script.
+_('''%(mythutil)s could not Generate the cutlist, aborting script.
 Error: %s
 ''') % (self.configuration, result[1])
                 self.logger.critical(verbage)
@@ -1197,7 +1199,7 @@ Error: %s
                 exit(int(common.JOBSTATUS().ABORTED))
             #
             self.stderr.write(
-                    _(u'''Successfully generated a new cut list\n\n'''))
+                    _('''Successfully generated a new cut list\n\n'''))
         #
         return
 #
@@ -1215,13 +1217,13 @@ Error: %s
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
                 verbage = _(
-u'''Your installed version of MythTV does not support the UTCTZ
+'''Your installed version of MythTV does not support the UTCTZ
 datetime class. You must upgrade you install of v0.26+fixes and higher
 or downgrade to an earlier version.
 Your installed version has been detected as "%s", aborting script.''') % \
                     self.configuration['mythtv_version']
                 self.logger.critical(verbage)
-                self.stderr.write(verbage + u'\n')
+                self.stderr.write(verbage + '\n')
                 #
                 ## Remove this recording's files from the working directory
                 cleanup_working_dir(self.configuration['workpath'],
@@ -1266,7 +1268,7 @@ Your installed version has been detected as "%s", aborting script.''') % \
         channel = cursor.fetchall()
         if not len(channel) > 0:
             self.logger.info(
-_(u'''There is no channel record for chanid "%d", skipping getting recorder details.''' %
+_('''There is no channel record for chanid "%d", skipping getting recorder details.''' %
                 self.recorded.chanid))
             return
         #
@@ -1275,7 +1277,7 @@ _(u'''There is no channel record for chanid "%d", skipping getting recorder deta
         cardinfo = cursor.fetchall()
         if not len(cardinfo) > 0:
             self.logger.info(
-_(u'''There is no cardinfo record for sourceid "%d", skipping getting recorder details.''' %
+_('''There is no cardinfo record for sourceid "%d", skipping getting recorder details.''' %
                     channel[0][0]))
             return
         #
@@ -1284,7 +1286,7 @@ _(u'''There is no cardinfo record for sourceid "%d", skipping getting recorder d
         capturecard = cursor.fetchall()
         if not len(capturecard) > 0:
             self.logger.info(
-_(u'''There is no capturecard record for cardid "%d", skipping getting recorder details.''' %
+_('''There is no capturecard record for cardid "%d", skipping getting recorder details.''' %
                     cardinfo[0][0]))
             return
         #
@@ -1314,8 +1316,8 @@ _(u'''There is no capturecard record for cardid "%d", skipping getting recorder 
         #
         if not len(program) > 0:
             self.logger.info(
-_(u'''There is no program guide for this recorded video, skipping getting the genre.'''))
-            return u""
+_('''There is no program guide for this recorded video, skipping getting the genre.'''))
+            return ""
         #
         return program[0][0]
 #
@@ -1325,7 +1327,7 @@ _(u'''There is no program guide for this recorded video, skipping getting the ge
         '''
         try:
             list(self.MythVideo.searchVideos(custom=(("filename=%s",
-                    self.configuration['export_path_file'] + u'.mkv'),)))[0]
+                    self.configuration['export_path_file'] + '.mkv'),)))[0]
         except IndexError:
             return False
         #
@@ -1337,20 +1339,20 @@ _(u'''There is no program guide for this recorded video, skipping getting the ge
         '''
         #
         # Set recorded record basename to the new mkv file
-        self.recorded.basename = self.configuration['mkv_title'] + u'.mkv'
+        self.recorded.basename = self.configuration['mkv_title'] + '.mkv'
         self.recorded.filesize = self.configuration['filesize']
         #
         # Make an empty MythVideo record
         self.vid = self.Video(db=self.mythdb).create({
-                'title':'',
-                'filename': self.configuration['export_path_file'] + u'.mkv',
+                'title': '',
+                'filename': self.configuration['export_path_file'] + '.mkv',
                 'host': gethostname()})
         self.vid._db.gethostname()
         #
         # Add the metadata
         if self.metadata:
             self.vid.importMetadata(self.metadata)
-            if self.metadata.has_key('releasedate'):
+            if 'releasedate' in self.metadata:
                 self.vid.releasedate = self.metadata['releasedate']
             if self.studio:
                 self.vid.studio = self.studio
@@ -1400,22 +1402,23 @@ _(u'''There is no program guide for this recorded video, skipping getting the ge
                             else:
                                 self.vid[key] = artwork[key]
         #
-        self.logger.info(_(u'''Updating video metadata complete'''))
+        self.logger.info(_('''Updating video metadata complete'''))
         #
         # Copy to MythVideo
         try:
             self.copy()
         except Exception as errmsg:
             self.logger.critical(
-_(u'''Export to MythVideo, aborting script.
+_('''Export to MythVideo, aborting script.
 Error: %s''') % errmsg)
             # Clean up the unused MythVideo record
-            self.Video(self.vid[u'intid'], db=self.mythdb).delete()
+            self.Video(self.vid['intid'], db=self.mythdb).delete()
             #
             ## Remove this recording's files from the working directory
             cleanup_working_dir(self.configuration['workpath'],
                                 self.configuration['recorded_name'])
-            exit(int(common.JOBSTATUS().ABORTED))
+            raise errmsg
+            # exit(int(common.JOBSTATUS().ABORTED))
         #
         # Adjust the duration that the video plays after cutting
         self._get_new_duration()
@@ -1444,14 +1447,13 @@ Error: %s''') % errmsg)
             srcsize = self.recorded.filesize
         htime = [stime, stime, stime, stime]
         #
-        verbage = (_(u'''
+        verbage = (_('''
 Copying "%s"''') % self.configuration['mkv_file']
-                    + _(u" to myth://Videos@%s/%s") %
+                    + _(" to myth://Videos@%s/%s") %
                     (self.vid.host, self.vid.filename))
         self.logger.info(verbage)
-        # self.stdout.write(verbage + u'\n\n')
         #
-        srcfp = open(self.configuration['mkv_file'], 'r')
+        srcfp = open(self.configuration['mkv_file'], 'rb')
         dstfp = self.vid.open('w')
         #
         tsize = 2**24
@@ -1465,7 +1467,7 @@ Copying "%s"''') % self.configuration['mkv_file']
         #
         self.vid.hash = self.vid.getHash()
         #
-        self.logger.info(_(u"Transfer Complete %d seconds elapsed") %
+        self.logger.info(_("Transfer Complete %d seconds elapsed") %
                         int(time.time()-stime))
         #
         return
@@ -1491,7 +1493,7 @@ Copying "%s"''') % self.configuration['mkv_file']
                     if self.metadata.categories:
                         self.category = self.metadata.categories[0]
                     self.logger.info(
-                            _(u'''Found TV series "%s" Episode "%s".''') %
+                            _('''Found TV series "%s" Episode "%s".''') %
                             (self.metadata['title'],
                             self.metadata['subtitle']))
                 except StopIteration:
@@ -1502,12 +1504,12 @@ Copying "%s"''') % self.configuration['mkv_file']
                     self.metadata = self.ttvdb.sortedSearch(
                                     series, episode)
                     self.logger.info(
-                            _(u'''Found TV series "%s" Episode "%s".''') %
+                            _('''Found TV series "%s" Episode "%s".''') %
                             (self.metadata[0]['title'],
                             self.metadata[0]['subtitle']))
                 except IndexError:
                     self.logger.info(
-                            _(u'''Falling back to generic export.'''))
+                            _('''Falling back to generic export.'''))
                     if not self.configuration['v024']:
                         self.metadata = self.recorded.exportMetadata()
                     return
@@ -1515,7 +1517,7 @@ Copying "%s"''') % self.configuration['mkv_file']
                 if (len(self.metadata) > 1) & \
                         (self.metadata[0].levenshtein > 0):
                     self.logger.info(
-                            _(u'''Falling back to generic export.'''))
+                            _('''Falling back to generic export.'''))
                     if not self.configuration['v024']:
                         self.metadata = self.recorded.exportMetadata()
                 else:
@@ -1527,7 +1529,7 @@ Copying "%s"''') % self.configuration['mkv_file']
                         self.category = self.metadata.categories[0]
         except self.MythError as errmsg:
             self.logger.info(
-                _(u'''MythError, falling back to generic export.
+                _('''MythError, falling back to generic export.
 Error %s''') % errmsg)
             if not self.configuration['v024']:
                 self.metadata = self.recorded.exportMetadata()
@@ -1548,7 +1550,7 @@ Error %s''') % errmsg)
                 try:
                     self.metadata = self.tmdb.grabInetref(inetref)
                     self.logger.info(
-                            _(u'''Found Movie "%s".''') %
+                            _('''Found Movie "%s".''') %
                             (self.metadata['title']))
                     # Default to the first studio and category
                     if self.metadata.studios:
@@ -1562,11 +1564,11 @@ Error %s''') % errmsg)
                 try:
                     self.metadata = self.tmdb.sortedSearch(title)
                     self.logger.info(
-                            _(u'''Found Movie "%s".''') %
+                            _('''Found Movie "%s".''') %
                             (self.metadata[0]['title']))
                 except IndexError:
                     self.logger.info(
-                            _(u'''Falling back to generic export.'''))
+                            _('''Falling back to generic export.'''))
                     if not self.configuration['v024']:
                         self.metadata = self.recorded.exportMetadata()
                     return
@@ -1574,7 +1576,7 @@ Error %s''') % errmsg)
                 if (len(self.metadata) > 1) & \
                         (self.metadata[0].levenshtein > 0):
                     self.logger.info(
-                        _(u'''Falling back to generic export.'''))
+                        _('''Falling back to generic export.'''))
                     if not self.configuration['v024']:
                         self.metadata = self.recorded.exportMetadata()
                 else:
@@ -1586,7 +1588,7 @@ Error %s''') % errmsg)
                         self.category = self.metadata.categories[0]
         except self.MythError as errmsg:
             self.logger.info(
-                _(u'''MythError, falling back to generic export.
+                _('''MythError, falling back to generic export.
 Error %s''') % errmsg)
             if not self.configuration['v024']:
                 self.metadata = self.recorded.exportMetadata()
@@ -1647,11 +1649,11 @@ Error %s''') % errmsg)
             #
             if frame_offset == None:
                 self.logger.info(
-_(u'''There was no offset found for frame %(frame)s, returning start block equal to zero.''')
+_('''There was no offset found for frame %(frame)s, returning start block equal to zero.''')
 % self.configuration)
         else:
             self.logger.info(
-_(u'''There is not FPS value to calculate an offset, returning start block equal to zero.'''))
+_('''There is not FPS value to calculate an offset, returning start block equal to zero.'''))
         #
         return frame_offset
 #
@@ -1662,16 +1664,16 @@ _(u'''There is not FPS value to calculate an offset, returning start block equal
         return a dictionary of arrays containing all relevant DB data
         '''
         recorded_data = {}
-        for key in common.SQL_GET_OR_INSERT['insert_sql'].keys():
+        for key in list(common.SQL_GET_OR_INSERT['insert_sql'].keys()):
             recorded_data[key] = []
         #
         ## Get a MythTV data base cursor
         cursor = self.mythdb.cursor()
         #
         ## Get specific records for a recorded video
-        for table in recorded_data.keys():
+        for table in list(recorded_data.keys()):
             # Get the list of fields in this table record
-            if common.SQL_GET_OR_INSERT['insert_sql'][table].has_key('All'):
+            if 'All' in common.SQL_GET_OR_INSERT['insert_sql'][table]:
                 version = 'All'
             elif self.OWN_VERSION[1] == 24:
                 version = 24
@@ -1694,12 +1696,12 @@ _(u'''There is not FPS value to calculate an offset, returning start block equal
                     break
             #
             verbage = _(
-u'''Read %d records from the %s table for chanid "%s" with starttime "%s".''') % \
+'''Read %d records from the %s table for chanid "%s" with starttime "%s".''') % \
                         (len(records), table,
                         self.configuration['chanid'],
                         self.configuration['SQL_starttime'])
             self.logger.info(verbage)
-            self.stdout.write(verbage + u'\n')
+            self.stdout.write(verbage + '\n')
             #
             for record in records:
                 rec_dict = {}
@@ -1708,8 +1710,8 @@ u'''Read %d records from the %s table for chanid "%s" with starttime "%s".''') %
                     # Deal with quote characters in the text
                     if type(record[count]) == type(''):
                         rec_dict[field] = record[count].replace("'", "\\'")
-                    elif type(record[count]) == type(u''):
-                        rec_dict[field] = record[count].replace(u"'", u"\\'")
+                    elif type(record[count]) == type(''):
+                        rec_dict[field] = record[count].replace("'", "\\'")
                     elif record[count] == None:
                         rec_dict[field] = 'NULL'
                     else:
@@ -1730,12 +1732,12 @@ u'''Read %d records from the %s table for chanid "%s" with starttime "%s".''') %
         #
         # Adjust the various records to match the install environment
         recorded_data['recorded'][0]['hostname'] = self.localhostname
-        recorded_data['recorded'][0]['storagegroup'] = u'Default'
+        recorded_data['recorded'][0]['storagegroup'] = 'Default'
         if self.configuration['base_name'].find('_LOSSLESS_BUG') != -1:
             verbage = _(
-u'''Adjust the DB records as this is only a sample video file.''')
+'''Adjust the DB records as this is only a sample video file.''')
             self.logger.info(verbage)
-            self.stdout.write(verbage + u'\n')
+            self.stdout.write(verbage + '\n')
             recorded_data['recorded'][0]['basename'] = \
                                     self.configuration['base_name']
             self.configuration['mkv_file'] = self.configuration['base_name']
@@ -1794,10 +1796,10 @@ u'''Adjust the DB records as this is only a sample video file.''')
             'chanid': recorded_data['recorded'][0]['chanid'],
         }
         #
-        for table in common.SQL_GET_OR_INSERT['insert_sql'].keys():
-            verbage = _(u'''Delete old records in the %s table.''') % table
+        for table in list(common.SQL_GET_OR_INSERT['insert_sql'].keys()):
+            verbage = _('''Delete old records in the %s table.''') % table
             self.logger.info(verbage)
-            self.stdout.write(verbage + u'\n')
+            self.stdout.write(verbage + '\n')
             del_data['table'] = table
             #
             del_data['SQL_start'] = recorded_data[
@@ -1810,21 +1812,21 @@ u'''Adjust the DB records as this is only a sample video file.''')
                 try:
                     cursor.execute(sql_cmd)
                 except Exception as errmsg:
-                    verbage = _(u'''This SQL command caused an exception:
+                    verbage = _('''This SQL command caused an exception:
 %s
 Error: %s''') % (sql_cmd, errmsg)
                     self.logger.info(verbage)
-                    self.stdout.write(verbage + u'\n')
+                    self.stdout.write(verbage + '\n')
         #
         ## Insert various records for a recorded video
-        for table in common.SQL_GET_OR_INSERT['insert_sql'].keys():
+        for table in list(common.SQL_GET_OR_INSERT['insert_sql'].keys()):
             #
-            verbage = _(u'''Inserting %d records in the %s table.''') % \
+            verbage = _('''Inserting %d records in the %s table.''') % \
                         (len(recorded_data[table]), table)
             self.logger.info(verbage)
-            self.stdout.write(verbage + u'\n')
+            self.stdout.write(verbage + '\n')
             # Get the list of fields in this table record
-            if common.SQL_GET_OR_INSERT['insert_sql'][table].has_key('All'):
+            if 'All' in common.SQL_GET_OR_INSERT['insert_sql'][table]:
                 version = 'All'
             elif self.OWN_VERSION[1] == 24:
                 version = 24
@@ -1842,19 +1844,19 @@ Error: %s''') % (sql_cmd, errmsg)
                     # With duplicate program genre's
                     if table == 'program' or table == 'programgenres':
                         continue
-                    verbage = (_(u'''This SQL command failed:
+                    verbage = (_('''This SQL command failed:
 SQL command: "%s"
 Error: "%s"''') % (sql_cmd, errmsg))
                     self.logger.info(verbage)
-                    self.stdout.write(verbage + u'\n')
+                    self.stdout.write(verbage + '\n')
                     exit(int(common.JOBSTATUS().ABORTED))
         #
         cursor.close()
         #
         verbage = _(
-u'''All DB records inserted.''')
+'''All DB records inserted.''')
         self.logger.info(verbage)
-        self.stdout.write(verbage + u'\n')
+        self.stdout.write(verbage + '\n')
         #
         return recorded_data
 #
@@ -1864,12 +1866,12 @@ u'''All DB records inserted.''')
         '''
         srcsize = os.path.getsize(videofile)
         #
-        verbage = _(u"Copying %s") % (videofile) + \
-               u" to myth://%s@%s/%s" % \
+        verbage = _("Copying %s") % (videofile) + \
+               " to myth://%s@%s/%s" % \
                (db_record.storagegroup, db_record.hostname,
                 db_record.basename)
         self.logger.info(verbage)
-        self.stdout.write(verbage + u'\n\n')
+        self.stdout.write(verbage + '\n\n')
         srcfp = open(self.configuration['base_name'], 'r')
         dstfp = db_record.open('w')
         #
@@ -1896,14 +1898,14 @@ u'''All DB records inserted.''')
                             chanid=self.recorded.chanid,
                             starttime=self.recorded.starttime)
             if program == None:
-                verbage = (_(u'''
+                verbage = (_('''
 There is no Program record for the recording:
 Title: "%s" on channel %s with start time "%s"
 This recording cannot be deleted, aborting script''') %
-(self.recorded.title, (u'%s' % self.recorded.chanid)[1:],
+(self.recorded.title, ('%s' % self.recorded.chanid)[1:],
 self.recorded.starttime))
                 self.logger.info(verbage)
-                self.stdout.write(verbage + u'\n')
+                self.stdout.write(verbage + '\n')
                 #
                 ## Remove this recording's files from the
                 ## working directory
@@ -1912,24 +1914,24 @@ self.recorded.starttime))
                 exit(int(common.JOBSTATUS().ABORTED))
             #
             result = self.mythbeconn.deleteRecording(program, force=True)
-            if result == u'-1':
-                verbage = _(_(u'''
+            if result == '-1':
+                verbage = _(_('''
 Successfully removing the recording:
 Title: "%s" on channel %s with start time "%s"
 ''') %
-(self.recorded.title, (u'%s' % self.recorded.chanid)[1:],
+(self.recorded.title, ('%s' % self.recorded.chanid)[1:],
 self.recorded.starttime))
                 self.logger.info(verbage)
-                self.stdout.write(verbage + u'\n')
+                self.stdout.write(verbage + '\n')
             else:
-                verbage = (_(u'''
+                verbage = (_('''
 Removing the recording failed:
 Title: "%s" on channel %s with start time "%s", aborting script.
 ''') %
-(self.recorded.title, (u'%s' % self.recorded.chanid)[1:],
+(self.recorded.title, ('%s' % self.recorded.chanid)[1:],
 self.recorded.starttime))
                 self.logger.info(verbage)
-                self.stdout.write(verbage + u'\n')
+                self.stdout.write(verbage + '\n')
                 #
                 ## Remove this recording's files from the
                 ## working directory
@@ -1949,17 +1951,17 @@ self.recorded.starttime))
                 if match[0] == True and match[1] == True:
                     match_found = True
                     break
-                elif match[0] == False and filter(is_not_punct_char,
-                        self.recorded.title.strip().lower()) == match[1]:
+                elif match[0] == False and list(filter(is_not_punct_char,
+                        self.recorded.title.strip().lower())) == match[1]:
                     match_found = True
                     break
                 elif match[1] == False and (
-                            u'%s' % self.recorded.chanid)[1:] == match[0]:
+                            '%s' % self.recorded.chanid)[1:] == match[0]:
                     match_found = True
                     break
-                elif (u'%s' % self.recorded.chanid)[1:] == match[0] and \
-                        filter(is_not_punct_char,
-                            self.recorded.title.strip().lower()) == match[1]:
+                elif ('%s' % self.recorded.chanid)[1:] == match[0] and \
+                        list(filter(is_not_punct_char,
+                            self.recorded.title.strip().lower())) == match[1]:
                     match_found = True
                     break
         #
@@ -1976,12 +1978,12 @@ self.recorded.starttime))
         try:
             job = self.Job(self.configuration['jobid'])
         except self.MythError:
-            verbage = _(u'''
+            verbage = _('''
 No matching userjob for JobID "%s" was found therefore the comment
 and status was not updated, aborting the script.
 ''') % self.configuration['jobid']
             self.logger.info(verbage)
-            self.stdout.write(verbage + u'\n')
+            self.stdout.write(verbage + '\n')
             #
             ## Remove this recording's files from the
             ## working directory

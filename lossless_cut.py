@@ -1,11 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 # ----------------------
 """
 # Name: lossless_cut.py   A Loss Less video file cut for MythTV recordings
 #
 # Python Script
-# Author:   R.D. Vaughan
+# Author:   R.D. Vaughan  (original developer)
+#           Angela Schmid (maintainer)
 # Purpose:  This python script performs loss less video file cut
 #           and merge processing on MythTV recordings.
 #
@@ -56,7 +57,7 @@ from importcode.mythtvinterface import Mythtvinterface
 try:
     from lxml import etree as etree
 except Exception as errmsg:
-    sys.stderr.write(u'''
+    sys.stderr.write('''
 Importing the "lxml" python libraries failed on
 Error: (%s)\n''' % errmsg)
     sys.exit(int(common.JOBSTATUS().ABORTED))
@@ -72,7 +73,7 @@ for digit in etree.LIBXML_VERSION:
     VERSION += str(digit)+'.'
 VERSION = VERSION[:-1]
 if VERSION < '2.7.2':
-    sys.stderr.write(u'''
+    sys.stderr.write('''
 Error: The installed version of the "lxml" python library "libxml" version
        is too old. At least "libxml" version 2.7.2 must be installed.
        Your version is (%s).
@@ -177,6 +178,9 @@ Optional command line parameters:
                                 but exit before processing begins. Used this
                                 option for debugging. No changes to the mpg
                                 file occurs.
+  -P                            Passthrough, no subtitle processing
+                                No need for: mkvtoolnix and ccextractor
+                                Cannot be used with "-S" Strip option.
   -S                            Strip away any subtitle or secondary audio tracks
   -T                            Identifies a specific Audio track to copy in
                                 conjunction with the "-S" Strip option.
@@ -196,7 +200,8 @@ Optional command line parameters:
 This script requires the following to be installed and accessible:
   1) The "lossless_cut" directory must be installed on a MythTV backend
   2) The utilities: mythutil or mythcommflag
-  3) The mkv utility suite "MKVToolNix" is installed. At least versions
+  3) When --passthrough is not used:
+     The mkv utility suite "MKVToolNix" is installed. At least versions
     "v5.7.0" or higher. NOTE: Most Linux distros distribute older versions.
      Instructions to upgrading to the latest versions are at:
      Downloads: %s
@@ -212,23 +217,23 @@ This script requires the following to be installed and accessible:
         common.MKVTOOLNIX_SOURCE_URL,
         common.MEDIAINFO_PPA_URL, common.MEDIAINFO_URL)
 #
-MANDITORY = (MANDITORY + "%s") % u''
+MANDITORY = (MANDITORY + "%s") % ''
 #
 ## Command line options and arguments
 PARSER = OptionParser(
-        usage=u"%prog usage: lossless_cut.py -aCDefghujklmrsStTvXw [parameters]\n")
+        usage="%prog usage: lossless_cut.py -aCDefghujklmrsPStTvXw [parameters]\n")
 
 PARSER.add_option(  "-a", "--addmetadata", action="store_true",
                     default=False, dest="addmetadata",
-                    help=_(u"Do NOT add metadata to the mkv video container."))
+                    help=_("Do NOT add metadata to the mkv video container."))
 PARSER.add_option(  "-C", "--concertcuts", metavar="concertcuts",
                     action="store_const", default="N/A", dest="concertcuts",
-                    help= u'''Create individual files from each cut segment and an optional
+                    help= '''Create individual files from each cut segment and an optional
 track naming configuration file. This option is referred to as "Concert Cuts".''')
 PARSER.add_option(  "-D", "--delayvideo", type="int",
                     metavar="delayvideo", dest="delayvideo",
                     help= _(
-u'''Delay option to change when the video track starts by a
+'''Delay option to change when the video track starts by a
 positive (start sooner than other tracks) or
 negative number (start later than other tracks) in milliseconds.
 One second = 1000
@@ -236,73 +241,77 @@ This option should only be chosen by experienced users.'''))
 PARSER.add_option(  "-e", "--mythvideo_export", action="store_true",
                     default=False, dest="mythvideo_export",
                     help=_(
-u"Export the final mkv video into MythVideo, this includes subdirectory creation when necessary."))
+"Export the final mkv video into MythVideo, this includes subdirectory creation when necessary."))
 PARSER.add_option(  "-f", "--recordedfile", metavar="recordedfile",
                     default="", dest="recordedfile",
                     help=_(
-u'The absolute path and file name of the MythTV recording.'))
+'The absolute path and file name of the MythTV recording.'))
 PARSER.add_option(  "-g", "--gencutlist", action="store_true",
                     default=False, dest="gencutlist",
                     help=_(
-u"Generate a cut list if one does not exist but there is a skip list."))
+"Generate a cut list if one does not exist but there is a skip list."))
 PARSER.add_option(  "-j", "--jobid", metavar="JOBID",
                     default="", dest="jobid",
-                    help= u'''This is the MythTV JobQueue ID from the "%JOBID%"
+                    help= '''This is the MythTV JobQueue ID from the "%JOBID%"
 variable. This is a mandatory command line option if the
 configuration file "error_detection" variables are used.''')
 PARSER.add_option(  "-k", "--keeplog", action="store_true",
                     default=False, dest="keeplog",
                     help=_(
-u"Keep the log file after the userjob has completed successfully."))
+"Keep the log file after the userjob has completed successfully."))
 PARSER.add_option(  "-l", "--logpath", metavar="logpath",
                     default="", dest="logpath",
                     help=_(
-u'Specify a directory path to save the jobs log file'))
+'Specify a directory path to save the jobs log file'))
 PARSER.add_option(  "-m", "--movepath", metavar="movepath",
                     default="", dest="movepath",
                     help=_(
-u"Specify a local directory path to move/save the final mkv video file."))
+"Specify a local directory path to move/save the final mkv video file."))
 PARSER.add_option(  "-r", "--replace_recorded", action="store_true",
                     default=False, dest="replace_recorded",
                     help=_(
-u"Replace the recorded video file with the loss less cut version. Use with caution!"))
+"Replace the recorded video file with the loss less cut version. Use with caution!"))
 PARSER.add_option(  "-s", "--summary", action="store_true",
                     default=False, dest="summary",
                     help=_(
-u'''Display a summary of the options that would be used during processing
+'''Display a summary of the options that would be used during processing
 but exit before processing begins. Used this for debugging. No changes
 to the mpg file occur.'''))
+PARSER.add_option(  "-P", "--passthrough", action="store_true",
+                    default=False, dest="passthrough",
+                    help=_(
+"Passthrough, no subtitle processing."))
 PARSER.add_option(  "-S", "--noextratracks", action="store_true",
                     default=False, dest="noextratracks",
                     help=_(
-u"Do not include any subtitle or secondary audio tracks."))
+"Do not include any subtitle or secondary audio tracks."))
 PARSER.add_option(  "-t", "--test", action="store_true",
                     default=False, dest="test",
                     help=_(
-u"Test that the environment meets all the scripts dependencies."))
+"Test that the environment meets all the scripts dependencies."))
 PARSER.add_option(  "-T", "--tracknumber", type="int",
                     metavar="tracknumber", dest="tracknumber",
                     help= _(
-u'''Identifies a specific Audio track to copy in
+'''Identifies a specific Audio track to copy in
 conjunction with the "-S" Strip option.
 Find the audio track numbers using a
 "> mkvmerge -i file.mkv" command. If there is only
 one audio track then this option is meaningless.'''))
 PARSER.add_option(  "-u", "--usage", action="store_true",
                     default=False, dest="usage",
-                    help=_(u"Display this help/usage text and exit."))
+                    help=_("Display this help/usage text and exit."))
 PARSER.add_option(  "-v", "--version", action="store_true",
                     default=False, dest="version",
-                    help=_(u"Display version and author information"))
+                    help=_("Display version and author information"))
 PARSER.add_option(  "-X", "--forcemythxxextractor", action="store_true",
                     default=False, dest="forcemythxxextractor",
                     help=_(
-u'''Force use of mythccextractor as the primary
+'''Force use of mythccextractor as the primary
 utility to extract and convert subtitles tracks into SRT format.'''))
 PARSER.add_option(  "-w", "--workingpath", metavar="WORKINGPATH",
                     default="", dest="workingpath",
                     help=_(
-u'Specify a working directory path to manipulate the video file'))
+'Specify a working directory path to manipulate the video file'))
 #
 OPTS, ARGS = PARSER.parse_args()
 #
@@ -329,16 +338,16 @@ class OutStreamEncoder(object):
     def write(self, obj):
         """Wraps the output stream, encoding Unicode strings with the
         specified encoding"""
-        if isinstance(obj, unicode):
-            try:
-                self.out.write(obj.encode(self.encoding))
-            except IOError:
-                pass
-        else:
-            try:
-                self.out.write(obj)
-            except IOError:
-                pass
+        # if isinstance(obj, unicode):
+        #     try:
+        #        self.out.write(obj.encode(self.encoding))
+        #    except IOError:
+        #        pass
+        # else:
+        try:
+            self.out.write(obj)
+        except IOError:
+            pass
 
     def __getattr__(self, attr):
         """Delegate everything but write to the stream"""
@@ -365,9 +374,10 @@ class Mythtvlosslesscut(object):
                 # TRANSLATORS: Please leave %s as it is,
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
-                _(u'''Processing the configuration file failed. Error(%s)\n''')
+                _('''Processing the configuration file failed. Error(%s)\n''')
                     % errmsg)
-            sys.exit(int(self.jobstatus.ABORTED))
+            raise errmsg
+            # sys.exit(int(self.jobstatus.ABORTED))
         #
         self.logger = create_logger(self.configuration['logfile'], filename=True)
         #
@@ -383,9 +393,10 @@ class Mythtvlosslesscut(object):
                 # TRANSLATORS: Please leave %s as it is,
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
-                _(u'''Acquiring access to MythTV failed, aborting script.
+                _('''Acquiring access to MythTV failed, aborting script.
 Error(%s)\n''') % errmsg)
-            sys.exit(int(self.jobstatus.ABORTED))
+            raise errmsg
+            # sys.exit(int(self.jobstatus.ABORTED))
         #
         ## Set if mythtv v0.24 is installed
         if self.mythtvinterface.OWN_VERSION[1] == 24:
@@ -404,7 +415,7 @@ Error(%s)\n''') % errmsg)
                 common.APPDIR, common.CCEXTRACTOR)
         # Add location of the ProjectX java app
         self.configuration['projectx_jar_path'] = \
-                u'%ssubtitle/ProjectX.jar' % common.APPDIR
+                '%ssubtitle/ProjectX.jar' % common.APPDIR
         #
         try:
             self.configuration['mythutil'] = check_dependancies(
@@ -414,11 +425,12 @@ Error(%s)\n''') % errmsg)
                 # TRANSLATORS: Please leave %s as it is,
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
-                _(u'''
+                _('''
 One or more script dependencies could not be satisfied, aborting script.
 Error(%s)\n''')
                     % errmsg)
-            sys.exit(int(self.jobstatus.ABORTED))
+            raise errmsg
+            #sys.exit(int(self.jobstatus.ABORTED))
         #
         self.mythtvinterface.stdout = sys.stdout
         self.mythtvinterface.stderr = sys.stderr
@@ -461,7 +473,7 @@ Error(%s)\n''')
         if self.configuration['test']:
             self._display_variables(summary=True)
             sys.stdout.write(
-                _(u'''Congratulations! All script dependencies have been satisfied.
+                _('''Congratulations! All script dependencies have been satisfied.
 You are ready to perform loss less cuts on MythTV recorded videos.
 
 '''))
@@ -477,7 +489,7 @@ You are ready to perform loss less cuts on MythTV recorded videos.
             # because it is needed by the program.
             # Thank you for contributing to this project.
             sys.stderr.write(
-_(u'''You must select one of these three options "-e", "-m", "r". See:
+_('''You must select one of these three options "-e", "-m", "r". See:
 %s\n''') % (MANDITORY))
             sys.exit(int(self.jobstatus.ABORTED))
         elif count > 1:
@@ -485,7 +497,7 @@ _(u'''You must select one of these three options "-e", "-m", "r". See:
             # because it is needed by the program.
             # Thank you for contributing to this project.
             sys.stderr.write(
-_(u'''You must ONLY select ONE of these three options "-e", "-m", "r". See:
+_('''You must ONLY select ONE of these three options "-e", "-m", "r". See:
 %s\n''') % (MANDITORY))
             sys.exit(int(self.jobstatus.ABORTED))
         #
@@ -493,7 +505,7 @@ _(u'''You must ONLY select ONE of these three options "-e", "-m", "r". See:
             # TRANSLATORS: Please leave %s as it is,
             # because it is needed by the program.
             # Thank you for contributing to this project.
-_(u'''Start loss less commercial cut of "%s" at: %s''') % (
+_('''Start loss less commercial cut of "%s" at: %s''') % (
             self.configuration['recordedfile'],
             self.processing_started.strftime(common.LL_START_END_FORMAT)))
         #
@@ -502,7 +514,7 @@ _(u'''Start loss less commercial cut of "%s" at: %s''') % (
         self._collect_metadate()
         #
         # Only process subtitles if they need to be included
-        if not self.configuration['strip'] and self.subtitles:
+        if not self.configuration['passthrough'] and (not self.configuration['strip'] and self.subtitles):
             self._process_subtitles()
         #
         self._cut_preprocessing()
@@ -547,7 +559,7 @@ _(u'''Start loss less commercial cut of "%s" at: %s''') % (
                    self.configuration['series'] % self.configuration
             else:
                 self.configuration['video_title'] = \
-                    u'%(title)s: %(subtitle)s' % self.configuration
+                    '%(title)s: %(subtitle)s' % self.configuration
         else:
             if self.configuration['releasedate']:
                 self.configuration['video_title'] = \
@@ -555,7 +567,7 @@ _(u'''Start loss less commercial cut of "%s" at: %s''') % (
                         self.configuration
             else:
                 self.configuration['video_title'] = \
-                    u'%(title)s' % self.configuration
+                    '%(title)s' % self.configuration
         #
         self.configuration['iso639_2_lang_codes'] = \
                             read_iso_language_codes(logger=self.logger)
@@ -570,12 +582,12 @@ _(u'''Start loss less commercial cut of "%s" at: %s''') % (
             for find_replace in self.configuration['mythvidexport_rep']:
                 self.configuration['concertcuts'] = self.configuration[
                     'concertcuts'].replace(find_replace[0], find_replace[1])
-                for seg_key in self.configuration['segment_names'].keys():
+                for seg_key in list(self.configuration['segment_names'].keys()):
                     self.configuration['segment_names'][seg_key] = \
                         self.configuration['segment_names'][seg_key].replace(
                                     find_replace[0], find_replace[1])
         #
-        self.logger.info(_(u'''
+        self.logger.info(_('''
 Recorded file:
   Channel ID: %(chanid)s
   Start time: %(starttime)s
@@ -598,7 +610,7 @@ Recorded file:
         ## Attempt to extract non-SRT subtitle tracks and convert
         ## into srt format
         subtrack_num = 0
-        unknown_lang = u'Unknown %s'
+        unknown_lang = 'Unknown %s'
         unknown_lang_count = 1
         first_subtitle_track = True
         first_dvb_subtitle_track = True
@@ -621,20 +633,20 @@ Recorded file:
                     # the language of a subtitle track
                     sublanguage = unknown_lang % unknown_lang_count
                     unknown_lang_count += 1
-                self.configuration['subid'] = u''
+                self.configuration['subid'] = ''
                 index = (subid.text).find(' ')
                 if not index == -1:
                     self.configuration['subid'] = (subid.text)[:index]
                 else:
                     verbage = _(
-u'''Subtitle streamid %s does not have a recognizable subid in the
+'''Subtitle streamid %s does not have a recognizable subid in the
 ID sudid text "%s", skipping this subtitle track.''') % \
                         (self.configuration['streamid'], subid)
                     self.logger.info(verbage)
-                    sys.stdout.write(verbage + u'\n\n')
+                    sys.stdout.write(verbage + '\n\n')
                     subtrack_num += 1
                     continue
-                self.configuration['subpage'] = u''
+                self.configuration['subpage'] = ''
                 index = (subid.text).find(')-')
                 if not index == -1:
                     self.configuration['subpage'] = (
@@ -642,11 +654,11 @@ ID sudid text "%s", skipping this subtitle track.''') % \
             except Exception as errmsg:
                 # Deal with problems with the subtitle data
                 verbage = _(
-u'''Getting Subtitle streamid %s extraction information failed
+'''Getting Subtitle streamid %s extraction information failed
 this subtitle track will be skipped.
 Error: "%s"''') % (self.configuration['streamid'], errmsg)
                 self.logger.info(verbage)
-                sys.stdout.write(verbage + u'\n\n')
+                sys.stdout.write(verbage + '\n\n')
                 subtrack_num += 1
                 continue
             #
@@ -672,7 +684,7 @@ Error: "%s"''') % (self.configuration['streamid'], errmsg)
                     directory, basefilename = os.path.split(
                             self.configuration['projectx_ini_path'])
                     sys.stderr.write(_(
-u'''Could not create the ProjectX "%s" file in directory "%s".
+'''Could not create the ProjectX "%s" file in directory "%s".
 This is likely a directory Read/Write permission issue but
 check the error message below to confirm, aborting script.
 Error: %s''') % (basefilename, directory, errmsg))
@@ -686,19 +698,19 @@ Error: %s''') % (basefilename, directory, errmsg))
                 result = commandline_call(
                                     self.configuration['java'], arguments)
                 #
-                stdout = u''
+                stdout = ''
                 if self.configuration['verbose']:
                     stdout = result[1]
                 #
                 if result[0]:
-                    self.logger.info(_(u'''ProjectX command:
+                    self.logger.info(_('''ProjectX command:
 > %s %s
 
 %s
 ''' % (self.configuration['java'], arguments, stdout)))
                     #
                     for filename in glob(
-                        (u'%(workpath)s/%(recorded_name)s*' %
+                        ('%(workpath)s/%(recorded_name)s*' %
                             self.configuration)):
                         if not filename.endswith('.idx'):
                             continue
@@ -727,7 +739,7 @@ Error: %s''') % (basefilename, directory, errmsg))
                     continue
                 else:
                     verbage = \
-_(u'''ProjectX could not extract a DVB Subtitle track.
+_('''ProjectX could not extract a DVB Subtitle track.
 ID %s, language "%s", Format "%s"
 Commandline options: "%s"
 %s''') % (subid.text, sublanguage, subformat, arguments, result[1])
@@ -755,20 +767,20 @@ Commandline options: "%s"
                 #
                 arguments = (self.configuration['mythccextractor_args']) % (
                                 self.configuration)
-                result = commandline_call(u'mythccextractor', arguments)
+                result = commandline_call('mythccextractor', arguments)
                 #
-                stdout = u''
+                stdout = ''
                 if self.configuration['verbose']:
                     stdout = result[1]
                 #
                 if result[0]:
-                    self.logger.info(_(u'''Mythccextractor command:
+                    self.logger.info(_('''Mythccextractor command:
 > %s %s
 
 %s
-''' % (u'mythccextractor', arguments, stdout)))
+''' % ('mythccextractor', arguments, stdout)))
                     for filename in glob(
-                        (u'%(recorded_dir)s/%(recorded_name)s*.srt' %
+                        ('%(recorded_dir)s/%(recorded_name)s*.srt' %
                             self.configuration)):
                         # Unfortunitely even if all the subtitle
                         # tracks being properly identified the fact that
@@ -795,7 +807,7 @@ Commandline options: "%s"
                     continue
                 else:
                     verbage = \
-_(u'''mythccextractor could not extract a subtitle track.
+_('''mythccextractor could not extract a subtitle track.
 ID %s, language "%s", Format "%s"
 Commandline options: "%s"
 %s''') % (
@@ -810,7 +822,7 @@ Commandline options: "%s"
             #
             self.configuration['sub_filename'] = os.path.join(
                         self.configuration['workpath'],
-                        u'%s_%03d.srt' %
+                        '%s_%03d.srt' %
                         (self.configuration['recorded_name'], subtrack_num))
             #
             # Clean up any zero sized srt file
@@ -820,7 +832,7 @@ Commandline options: "%s"
                 pass
             #
             # <ID>5603 (0x15E3)-888</ID>
-            self.configuration['streamid'] = u'1'
+            self.configuration['streamid'] = '1'
             try:
                 self.configuration['streamid'] = subetree.attrib['streamid']
             except KeyError:
@@ -834,19 +846,19 @@ Commandline options: "%s"
             arguments = (self.configuration['ccextractor_args']) % (
                             self.configuration)
             if not self.configuration['subpage']:
-                arguments = arguments.replace(u'-tpage  ', u'')
+                arguments = arguments.replace('-tpage  ', '')
             #
             ## Use option '-noteletext' ONLY when subformat.startswith('EIA-')
             ## Currently only HDHomerun recordings seems to need this
             ## option but other devices may have the same issue
             if subformat.startswith('EIA-'):
-                arguments += u' -noteletext'
+                arguments += ' -noteletext'
             result = commandline_call(self.configuration['ccextractor'],
                                         arguments)
-            stdout = u''
+            stdout = ''
             if self.configuration['verbose']:
                 stdout = result[1]
-            self.logger.info(_(u'''CCExtractor command:
+            self.logger.info(_('''CCExtractor command:
 > %s %s
 
 %s
@@ -857,7 +869,7 @@ Commandline options: "%s"
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
                 verbage = \
-_(u'''CCExtractor could not extract a subtitle track.
+_('''CCExtractor could not extract a subtitle track.
 ID %s, language "%s", Format "%s"
 Commandline options: "%s"
 %s''') % (subid.text, sublanguage, subformat, arguments, result[1])
@@ -894,7 +906,7 @@ Commandline options: "%s"
         ## Add the srt file(s)
         cmd_line_args = common.ADD_SRT_CMD % self.configuration
         for srtfile in self.configuration['srt_files']:
-            lang_code = u''
+            lang_code = ''
             #
             ## The TID "0" in "0:%s" is hardcoded for the language and
             ## vobsub delay.
@@ -904,7 +916,7 @@ Commandline options: "%s"
                                 sublanguage,
                                 logger=self.logger)
                 if lang_code:
-                    lang_code = u'--language 0:%s' % \
+                    lang_code = '--language 0:%s' % \
                         (lang_code)
             #
             ## Subitle track delay
@@ -920,16 +932,16 @@ Commandline options: "%s"
                     delay_value = int(self.configuration[
                                     'vobsub_delay'].strip()) + srtfile[2]
                 #
-                lang_code += u' --sync 0:%s' % delay_value
+                lang_code += ' --sync 0:%s' % delay_value
             #
-            cmd_line_args += u' %s "%s"' % (lang_code, srtfile[1])
+            cmd_line_args += ' %s "%s"' % (lang_code, srtfile[1])
         #
         result = commandline_call(common.MKVMERGE, cmd_line_args %
                                 self.configuration)
-        stdout = u''
+        stdout = ''
         if self.configuration['verbose']:
             stdout = result[1]
-        self.logger.info(_(u'''mkvmerge add subtitle track(s) command:
+        self.logger.info(_('''mkvmerge add subtitle track(s) command:
 > mkvmerge %s
 
 %s
@@ -939,10 +951,10 @@ Commandline options: "%s"
             # because it is needed by the program.
             # Thank you for contributing to this project.
             verbage = \
-_(u'''mkvmerge could not add the subtitle track(s), aborting script.
+_('''mkvmerge could not add the subtitle track(s), aborting script.
 Error: %s''') % (result[1])
             self.logger.critical(verbage)
-            sys.stderr.write(verbage + u'\n')
+            sys.stderr.write(verbage + '\n')
             #
             ## Remove this recording's files from the working directory
             cleanup_working_dir(self.configuration['workpath'],
@@ -986,22 +998,22 @@ Error: %s''') % (result[1])
 
             # replace PATH like variables from series/title/subtitle to construct valid export_path_file
             self.configuration['series'] = self.configuration['series']\
-                .replace(u': ', u' - ') \
-                .replace(u' / ', u', ') \
-                .replace(u' /', u',') \
-                .replace(u'/', u',')
+                .replace(': ', ' - ') \
+                .replace(' / ', ', ') \
+                .replace(' /', ',') \
+                .replace('/', ',')
 
             self.configuration['title'] = self.configuration['title']\
-                .replace(u': ', u' - ') \
-                .replace(u' / ', u', ') \
-                .replace(u' /', u',') \
-                .replace(u'/', u',')
+                .replace(': ', ' - ') \
+                .replace(' / ', ', ') \
+                .replace(' /', ',') \
+                .replace('/', ',')
 
             self.configuration['subtitle'] = self.configuration['subtitle']\
-                .replace(u': ', u' - ') \
-                .replace(u' / ', u', ') \
-                .replace(u' /', u',') \
-                .replace(u'/', u',')
+                .replace(': ', ' - ') \
+                .replace(' / ', ', ') \
+                .replace(' /', ',') \
+                .replace('/', ',')
 
             self.configuration['export_path_file'] = (
                 self.configuration['export_format'] % self.configuration)
@@ -1013,11 +1025,11 @@ Error: %s''') % (result[1])
                 # TRANSLATORS: Please leave %s as it is,
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
-                verbage = _(u'''
+                verbage = _('''
 The MythVideo already exists, aborting script.
 MythVideo: %s''') % (self.configuration['export_path_file'])
                 self.logger.critical(verbage)
-                sys.stderr.write(verbage + u'\n')
+                sys.stderr.write(verbage + '\n')
                 #
                 ## Remove this recording's files from the working directory
                 cleanup_working_dir(self.configuration['workpath'],
@@ -1035,18 +1047,18 @@ MythVideo: %s''') % (self.configuration['export_path_file'])
             while True:
                 self.configuration['mkv_file'] = os.path.join(
                     self.configuration['movepath'],
-                    self.configuration['mkv_title'] + u'.mkv')
+                    self.configuration['mkv_title'] + '.mkv')
                 ## Check for a duplicate file in export directory
                 if os.path.isfile(self.configuration['mkv_file']):
                     self.configuration['mkv_title'] = \
-                        self.configuration['mkv_title'] + u' - ' +\
+                        self.configuration['mkv_title'] + ' - ' +\
                         datetime.now().strftime(common.LL_START_END_FORMAT)
                     continue
                 break
         else:
             self.configuration['mkv_file'] = os.path.join(
                 self.configuration['recorded_dir'],
-                self.configuration['recorded_name'] + u'.mkv')
+                self.configuration['recorded_name'] + '.mkv')
             #
             # Remove any old mkv file that may exist
             try:
@@ -1055,13 +1067,13 @@ MythVideo: %s''') % (self.configuration['export_path_file'])
                 pass
         #
         ## Get track total
-        arguments = u'--identify "%(sourcefile)s"'
+        arguments = '--identify "%(sourcefile)s"'
         result = commandline_call(common.MKVMERGE,
                     arguments % self.configuration)
-        stdout = u''
+        stdout = ''
         if self.configuration['verbose']:
             stdout = result[1]
-        self.logger.info(_(u'''mkvmerge get total tracks command:
+        self.logger.info(_('''mkvmerge get total tracks command:
 > mkvmerge %s
 
 %s
@@ -1070,10 +1082,10 @@ MythVideo: %s''') % (self.configuration['export_path_file'])
             # TRANSLATORS: Please leave %s as it is,
             # because it is needed by the program.
             # Thank you for contributing to this project.
-            verbage = _(u'''mkvmerge to read tracks IDs, aborting script.
+            verbage = _('''mkvmerge to read tracks IDs, aborting script.
 Error: %s''') % (result[1])
             self.logger.critical(verbage)
-            sys.stderr.write(verbage + u'\n')
+            sys.stderr.write(verbage + '\n')
             #
             ## Remove this recording's files from the working directory
             cleanup_working_dir(self.configuration['workpath'],
@@ -1084,7 +1096,7 @@ Error: %s''') % (result[1])
         self.configuration['trackinfo']['total_tracks'] = \
                     len(track_ids) - 1
         #
-        self.configuration['strip_args'] = u''
+        self.configuration['strip_args'] = ''
         if self.configuration['strip']:
             video, audio = False, False
             for track in track_ids:
@@ -1092,36 +1104,36 @@ Error: %s''') % (result[1])
                 index = track.find('video')
                 if not index == -1 and video == False:
                     index = track.find(':')
-                    video = u'-d ' + track[:track_id_index].replace(
-                                    common.TRACK_ID, u'').strip()
+                    video = '-d ' + track[:track_id_index].replace(
+                                    common.TRACK_ID, '').strip()
                 index = track.find('audio')
                 if not index == -1:
                     if self.configuration['tracknumber']:
                         if str(self.configuration['tracknumber']) == \
                                 track[:track_id_index].replace(
-                                    common.TRACK_ID, u'').strip():
-                            audio =  u'-a ' + track[:track_id_index].replace(
-                                            common.TRACK_ID, u'').strip()
+                                    common.TRACK_ID, '').strip():
+                            audio =  '-a ' + track[:track_id_index].replace(
+                                            common.TRACK_ID, '').strip()
                     elif audio == False:
-                        audio = u'-a ' + track[:track_id_index].replace(
-                                        common.TRACK_ID, u'').strip()
+                        audio = '-a ' + track[:track_id_index].replace(
+                                        common.TRACK_ID, '').strip()
             if audio == False:
-                audio = u''
+                audio = ''
             if video == False:
-                video = u''
+                video = ''
             if self.configuration['concertcuts']:
-                video = u'-D'
-            self.configuration['strip_args'] = u'%s %s -S ' % (
+                video = '-D'
+            self.configuration['strip_args'] = '%s %s -S ' % (
                                                 video, audio, )
             #
             if self.configuration['concertcuts']:
                 verbage = _(
-u'''Only an "-a" audio track will be used with
+'''Only an "-a" audio track will be used with
 all -D video and -S subtitle tracks removed:
 %(strip_args)s''') % self.configuration
             else:
                 verbage = _(
-u'''Only the first of each "-d" video track and "-a" audio track
+'''Only the first of each "-d" video track and "-a" audio track
 will be used with all -S subtitle tracks removed:
 %(strip_args)s''') % self.configuration
             self.logger.info(verbage)
@@ -1131,7 +1143,7 @@ will be used with all -S subtitle tracks removed:
         if self.configuration['rawcutlist']:
             #
             ## Create timecode split list using recordseeks fps value
-            splitlist = u''
+            splitlist = ''
             fps = self.configuration['fps']
             for cut in self.configuration['keyframe_cuts']:
                 start_secs = cut[0] / fps
@@ -1139,13 +1151,13 @@ will be used with all -S subtitle tracks removed:
                 end_secs = cut[1] / fps
                 end_timecode = make_timestamp(end_secs)
                 if splitlist:
-                    splitlist += u','
-                split = u'%s-%s' % (start_timecode, end_timecode)
+                    splitlist += ','
+                split = '%s-%s' % (start_timecode, end_timecode)
                 splitlist += split
                 self.configuration['concert_cut_list'].append(split)
             self.configuration['split_list'] = splitlist
             #
-            self.logger.info(u'''Cut timestamps: %(split_list)s\n''' %
+            self.logger.info('''Cut timestamps: %(split_list)s\n''' %
                                 self.configuration)
         else:
             fps = self.configuration['fps']
@@ -1156,11 +1168,11 @@ will be used with all -S subtitle tracks removed:
             end_secs = self.configuration[
                                 'first_last_keyframes'][0][1] / fps
             end_timecode = make_timestamp(end_secs)
-            split = u'%s-%s' % (start_timecode, end_timecode)
+            split = '%s-%s' % (start_timecode, end_timecode)
             self.configuration['split_list'] = split
             self.configuration['concert_cut_list'].append(split)
             self.logger.info(
-u'''Start copying at the first keyframe to the last keyframe, timestamps: %(split_list)s\n''' %
+'''Start copying at the first keyframe to the last keyframe, timestamps: %(split_list)s\n''' %
                                 self.configuration)
         #
         return
@@ -1181,14 +1193,14 @@ u'''Start copying at the first keyframe to the last keyframe, timestamps: %(spli
             ## Add any user specified mkvmerge cut options that may have
             ## been specified in the lossless_cut.cfg file
             if self.configuration['mkvmerge_cut_addon']:
-                mkvmerge += u' ' + self.configuration['mkvmerge_cut_addon']
+                mkvmerge += ' ' + self.configuration['mkvmerge_cut_addon']
             #
             arguments = common.CUTS_CMD % self.configuration
             result = commandline_call(mkvmerge, arguments)
-            stdout = u''
+            stdout = ''
             if self.configuration['verbose']:
                 stdout = result[1]
-            self.logger.info(_(u'''mkvmerge perform cuts command:
+            self.logger.info(_('''mkvmerge perform cuts command:
 > %s %s
 %s
 ''' % (mkvmerge, arguments, stdout)))
@@ -1197,10 +1209,10 @@ u'''Start copying at the first keyframe to the last keyframe, timestamps: %(spli
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
                 verbage = _(
-u'''%s failed to cut the video into segments, aborting script.
+'''%s failed to cut the video into segments, aborting script.
 Error: %s''') % (common.MKVMERGE, result[1])
                 self.logger.critical(verbage)
-                sys.stderr.write(verbage + u'\n')
+                sys.stderr.write(verbage + '\n')
                 #
                 ## Remove this recording's files from the working directory
                 cleanup_working_dir(self.configuration['workpath'],
@@ -1210,13 +1222,13 @@ Error: %s''') % (common.MKVMERGE, result[1])
             ## Build the track appendto list
             ## Format for one video, two audio and a subtitle track e.g.
             ## "%s:0:%s:0,%s:1:%s:1,%s:2:%s:2,%s:3:%s:3"
-            self.configuration['append_list'] = u''
+            self.configuration['append_list'] = ''
             if self.configuration['strip']:
                 total_tracks = 3 # Only track 0 and 1 to worry about
             else:
                 total_tracks = self.configuration['trackinfo']['total_tracks']
             #
-            segments = sorted(glob(u'%(workpath)s/%(recorded_name)s-*.mkv' %
+            segments = sorted(glob('%(workpath)s/%(recorded_name)s-*.mkv' %
                     self.configuration))
             if len(segments) == 1:
                 self.configuration['sourcefile'] = segments[0]
@@ -1225,22 +1237,22 @@ Error: %s''') % (common.MKVMERGE, result[1])
                     nxt_segment = segment + 1
                     for track in range(total_tracks)[:-1]:
                         if self.configuration['append_list']:
-                            self.configuration['append_list'] += u','
+                            self.configuration['append_list'] += ','
                         self.configuration['append_list'] += \
                             common.APPENDTO_FORMAT % (
                                 nxt_segment, track, segment, track, )
             #
-            self.configuration['merge'] = u''
+            self.configuration['merge'] = ''
             for filename in segments:
                 if not self.configuration['merge']:
-                    self.configuration['merge'] = u'"%s"' % filename
+                    self.configuration['merge'] = '"%s"' % filename
                 else:
-                    self.configuration['merge'] += u' +"%s"' % filename
+                    self.configuration['merge'] += ' +"%s"' % filename
         #
-        if self.configuration.has_key('append_list'):
+        if 'append_list' in self.configuration:
 
             self.logger.info(_(
-u'''
+'''
 Appendto list:  '%(append_list)s'
 Merge list:     '%(merge)s'
 
@@ -1250,7 +1262,7 @@ MKV metadata (only used if add metadata is "true"):
 ''') % self.configuration)
         else:
             self.logger.info(_(
-u'''
+'''
 
 MKV metadata (only used if add metadata is "true"):
   Program title:       "%(mkv_title)s"
@@ -1258,40 +1270,40 @@ MKV metadata (only used if add metadata is "true"):
 ''') % self.configuration)
 
         #
-        merge_common = u'-o "%(mkv_file)s"'
+        merge_common = '-o "%(mkv_file)s"'
         #
         ## Add any user specified mkvmerge merge options that may have
         ## been specified in the lossless_cut.cfg file
         if self.configuration['mkvmerge_merge_addon']:
-            merge_common += u' ' + self.configuration['mkvmerge_merge_addon']
+            merge_common += ' ' + self.configuration['mkvmerge_merge_addon']
         #
         ## Add a video track delay (plus or minus) in millseconds
         ## Only when one was specified on the command line "-D"
         if self.configuration['delayvideo']:
             merge_common += self.configuration['delayvideo']
         #
-        merge_one_segment = u' "%(sourcefile)s"'
+        merge_one_segment = ' "%(sourcefile)s"'
         merge_metadata = \
-u' --title "%(mkv_title)s" --attachment-description "%(mkv_description)s"' % \
+' --title "%(mkv_title)s" --attachment-description "%(mkv_description)s"' % \
             self.configuration
         #
         if not self.configuration['add_metadata']:
-            merge_metadata = u''
+            merge_metadata = ''
         if not self.configuration['rawcutlist'] or \
                             not self.configuration['append_list']:
-            if self.configuration.has_key('append_list'):
-                arguments = u'%s%s%s' % (merge_common, merge_one_segment,
+            if 'append_list' in self.configuration:
+                arguments = '%s%s%s' % (merge_common, merge_one_segment,
                                             merge_metadata)
             else:
-                arguments = u'%s %s' % (merge_common, common.START_CUT_CMD)
+                arguments = '%s %s' % (merge_common, common.START_CUT_CMD)
         elif self.configuration['append_list']:
-            arguments = u'%s%s%s' % \
+            arguments = '%s%s%s' % \
                 (merge_common, merge_metadata,
-            u' --append-mode track %(merge)s --append-to %(append_list)s')
+            ' --append-mode track %(merge)s --append-to %(append_list)s')
         else:
-            arguments = u'%s%s%s' % \
+            arguments = '%s%s%s' % \
                 (merge_common, merge_metadata,
-                u' --append-mode track %(merge)s')
+                ' --append-mode track %(merge)s')
     #
     #
 ############# Do not un-comment unless used for debugging ########
@@ -1309,10 +1321,10 @@ u' --title "%(mkv_title)s" --attachment-description "%(mkv_description)s"' % \
     #
         arguments = arguments % self.configuration
         result = commandline_call(common.MKVMERGE, arguments)
-        stdout = u''
+        stdout = ''
         if self.configuration['verbose']:
             stdout = result[1]
-        self.logger.info(_(u'''mkvmerge create final mkv video file command:
+        self.logger.info(_('''mkvmerge create final mkv video file command:
 > mkvmerge %s
 
 %s
@@ -1321,10 +1333,10 @@ u' --title "%(mkv_title)s" --attachment-description "%(mkv_description)s"' % \
             # TRANSLATORS: Please leave %s as it is,
             # because it is needed by the program.
             # Thank you for contributing to this project.
-            verbage = _(u'''%s failed to create mkv file, aborting script.
+            verbage = _('''%s failed to create mkv file, aborting script.
 Error: %s''') % (common.MKVMERGE, result[1])
             self.logger.critical(verbage)
-            sys.stderr.write(verbage + u'\n')
+            sys.stderr.write(verbage + '\n')
             #
             ## Remove this recording's files from the working directory
             cleanup_working_dir(self.configuration['workpath'],
@@ -1340,10 +1352,10 @@ Error: %s''') % (common.MKVMERGE, result[1])
             # because it is needed by the program.
             # Thank you for contributing to this project.
             verbage = _(
-u'''No MKV file "%(mkv_file)s" was created, aborting script.
+'''No MKV file "%(mkv_file)s" was created, aborting script.
 Check the log file: "%(logfile)s"''') % self.configuration
             self.logger.critical(verbage)
-            sys.stderr.write(verbage + u'\n')
+            sys.stderr.write(verbage + '\n')
             #
             ## Remove this recording's files from the working directory
             cleanup_working_dir(self.configuration['workpath'],
@@ -1360,10 +1372,10 @@ Check the log file: "%(logfile)s"''') % self.configuration
                 self.mythtvinterface.add_to_mythvideo()
             except self.mythtvinterface.MythError as errmsg:
                 verbage = _(
-u'''The export to MythVideo failed, aborting script.
+'''The export to MythVideo failed, aborting script.
 Error: %s''') % errmsg
                 self.logger.critical(verbage)
-                sys.stderr.write(verbage + u'\n')
+                sys.stderr.write(verbage + '\n')
                 #
                 ## Remove the source MKV file after transfer
                 ## to MythVideo
@@ -1390,7 +1402,7 @@ Error: %s''') % errmsg
                                                 default_sub_var) != -1:
             self.configuration['concertcuts'] = \
                     self.configuration['concertcuts'].replace(
-                                            default_sub_var, u'').strip()
+                                            default_sub_var, '').strip()
             if self.configuration['concertcuts'][-1:] == ':':
                 self.configuration['concertcuts'] = \
                         self.configuration['concertcuts'][:-1]
@@ -1400,7 +1412,7 @@ Error: %s''') % errmsg
         ## Add any user specified mkvmerge cut options that may have
         ## been specified in the lossless_cut.cfg file
         if self.configuration['mkvmerge_cut_addon']:
-            mkvmerge += u' ' + self.configuration['mkvmerge_cut_addon']
+            mkvmerge += ' ' + self.configuration['mkvmerge_cut_addon']
         #
         ## Check if a video delay has been specified
         if not self.configuration['strip'] and \
@@ -1411,8 +1423,7 @@ Error: %s''') % errmsg
         for self.configuration['split_list'] in self.configuration[
                                                         'concert_cut_list']:
             #
-            if self.configuration['segment_names'].has_key(
-                            self.configuration['seg_num']):
+            if self.configuration['seg_num'] in self.configuration['segment_names']:
                 file_name = self.configuration[
                                 'segment_names'][
                                 self.configuration['seg_num']] % \
@@ -1443,10 +1454,10 @@ Error: %s''') % errmsg
             arguments = common.CONCERT_CUTS_CMD % self.configuration
             result = commandline_call(mkvmerge,
                         arguments)
-            stdout = u''
+            stdout = ''
             if self.configuration['verbose']:
                 stdout = result[1]
-            self.logger.info(_(u'''mkvmerge perform Concert Cuts command:
+            self.logger.info(_('''mkvmerge perform Concert Cuts command:
 > %s %s
 %s
 ''' % (mkvmerge, arguments, stdout)))
@@ -1455,13 +1466,13 @@ Error: %s''') % errmsg
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
                 verbage = _(
-u'''%s failed to Concert Cut the video into segments, aborting script.
+'''%s failed to Concert Cut the video into segments, aborting script.
 Error: %s''') % (common.MKVMERGE, result[1])
                 self.logger.critical(verbage)
-                sys.stderr.write(verbage + u'\n')
+                sys.stderr.write(verbage + '\n')
                 #
                 ## Remove this recording's cut files from the working directory
-                for filename in glob(u'%s/*' %
+                for filename in glob('%s/*' %
                                         self.configuration['workpath']):
                     os.remove(filename)
                 exit(int(self.jobstatus.ABORTED))
@@ -1473,7 +1484,7 @@ Error: %s''') % (common.MKVMERGE, result[1])
             ## and transfer the cut segment to MythVideo
             if self.configuration['mythvideo_export']:
                 self.configuration['mkv_file'] = \
-                        u"%(segment_path)s/%(segment_filename)s.mkv" % \
+                        "%(segment_path)s/%(segment_filename)s.mkv" % \
                                 self.configuration
                 self.configuration['mkv_title'] = basefile
                 self.configuration['export_path_file'] = file_name
@@ -1483,14 +1494,14 @@ Error: %s''') % (common.MKVMERGE, result[1])
                     self.mythtvinterface.add_to_mythvideo()
                 except self.mythtvinterface.MythError as errmsg:
                     verbage = _(
-u'''The export to MythVideo failed, aborting script.
+'''The export to MythVideo failed, aborting script.
 Error: %s''') % errmsg
                     self.logger.critical(verbage)
-                    sys.stderr.write(verbage + u'\n')
+                    sys.stderr.write(verbage + '\n')
                     #
                     ## Delete this recording's cut segment files
                     ## from the working directory
-                    for filename in glob(u'%s/*' %
+                    for filename in glob('%s/*' %
                                         self.configuration['workpath']):
                         os.remove(filename)
                     exit(int(self.jobstatus.ABORTED))
@@ -1519,10 +1530,10 @@ Error: %s''') % errmsg
             arguments = common.CLEAR_CUTLIST % self.configuration
             result = commandline_call(self.configuration['mythutil'],
                                             arguments)
-            stdout = u''
+            stdout = ''
             if self.configuration['verbose']:
                 stdout = result[1]
-            self.logger.info(_(u'''%s clear cut list command:
+            self.logger.info(_('''%s clear cut list command:
 > %s %s
 
 %s
@@ -1533,7 +1544,7 @@ Error: %s''') % errmsg
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
                 sys.stderr.write(
-_(u'''%s could not clear the cutlist, aborting script.
+_('''%s could not clear the cutlist, aborting script.
 Error: %s
 ''') % (self.configuration['mythutil'], result[1]))
                 #
@@ -1550,18 +1561,18 @@ Error: %s
             if self.configuration['delete_old']:
                 os.remove(self.configuration['recordedfile'])
                 verbage = \
-_(u'''The original recording:
+_('''The original recording:
 "%s" has been deleted.''') % self.configuration['recordedfile']
                 self.logger.info(verbage)
-                sys.stdout.write(verbage + u'\n')
+                sys.stdout.write(verbage + '\n')
             else:
                 os.rename(self.configuration['recordedfile'],
-                    self.configuration['recordedfile'] + u'.old')
+                    self.configuration['recordedfile'] + '.old')
                 verbage = \
-_(u'''The original recording has been renamed to:
-"%s"''') % (self.configuration['recordedfile'] + u'.old')
+_('''The original recording has been renamed to:
+"%s"''') % (self.configuration['recordedfile'] + '.old')
                 self.logger.info(verbage)
-                sys.stdout.write(verbage + u'\n')
+                sys.stdout.write(verbage + '\n')
         #
         ## Remove this recording's files from the working directory
         cleanup_working_dir(self.configuration['workpath'],
@@ -1570,13 +1581,13 @@ _(u'''The original recording has been renamed to:
         if self.configuration['mythvideo_export'] and \
                 not self.configuration['concertcuts']:
             copied_mkv = os.path.join(self.configuration['recorded_dir'],
-                self.configuration['mkv_title'] + u'.mkv', )
+                self.configuration['mkv_title'] + '.mkv', )
             os.remove(copied_mkv)
             self.logger.info(
                 # TRANSLATORS: Please leave %s as it is,
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
-    _(u'''Removed mkv file "%s" after exporting to MythVideo.''') %
+    _('''Removed mkv file "%s" after exporting to MythVideo.''') %
                 copied_mkv)
         #
         ## If this is a MythTVExport or a move then check if
@@ -1591,7 +1602,7 @@ _(u'''The original recording has been renamed to:
             # TRANSLATORS: Please leave %s as it is,
             # because it is needed by the program.
             # Thank you for contributing to this project.
-_(u'''End of loss less commercial cut for "%s" at: %s''') % (
+_('''End of loss less commercial cut for "%s" at: %s''') % (
             self.configuration['recordedfile'],
             datetime.now().strftime(common.LL_START_END_FORMAT)))
         #
@@ -1614,7 +1625,7 @@ _(u'''End of loss less commercial cut for "%s" at: %s''') % (
         # because it is needed by the program.
         # Thank you for contributing to this project.
         verbage = \
-                _(u'''
+                _('''
 These are the variables and options to be used when performing a
 loss less cut of a MythTV recorded video:
 
@@ -1631,8 +1642,9 @@ loss less cut of a MythTV recorded video:
   Add metadata to mkv file:     "%(add_metadata)s"
   Delete the mpg file:          "%(delete_old)s"
   Keep the log file:            "%(keep_log)s"
+  Passthrough:                  "%(passthrough)s"
   Remove subtitles and
-  secondary audio tracks:       "%(strip)s"
+    secondary audio tracks:     "%(strip)s"
   Test the script dependencies: "%(test)s"
 
   Movie metadata format:        "%(movie_format)s"
@@ -1655,7 +1667,7 @@ loss less cut of a MythTV recorded video:
         ## If the DVB Subtitles are set to true show the variables
         if self.configuration['include_dvb_subtitles']:
             verbage = verbage[:-1] + _(
-u'''
+'''
   DVB Subtitle args:
     Include DVB Subtitles:      "%(include_dvb_subtitles)s"
     Java runtime path:          "%(java)s"
@@ -1698,7 +1710,7 @@ u'''
             if results[1]:
                 errors = results[1].strip()
             #
-            self.logger.info(_(u'''User error detection command:
+            self.logger.info(_('''User error detection command:
 > %s
 
 STDOUT: "%s"
@@ -1717,7 +1729,7 @@ STDERR: "%s"
                     # because it is needed by the program.
                     # Thank you for contributing to this project.
                     verbage = _(
-u'''Your error detection bash command:
+'''Your error detection bash command:
 > %s
 Did not return a valid integer count of the errors detected, aborting the script.
 STDOUT results should be nothing or an integer: "%s"
@@ -1729,7 +1741,7 @@ STDOUT results should be nothing or an integer: "%s"
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
                 verbage = _(
-u'''Your error detection bash command:
+'''Your error detection bash command:
 > %s
 Returned errors on STDERR, aborting the script.
 STDERR results: "%s"
@@ -1769,7 +1781,7 @@ STDERR results: "%s"
             # because it is needed by the program.
             # Thank you for contributing to this project.
             verbage = _(
-u'''Your error detection command has indicated an %s should occur.
+'''Your error detection command has indicated an %s should occur.
 Examine the log file "%s" for further details.
 ''') % (error['type'], self.configuration['logfile'])
             sys.stderr.write(verbage)
@@ -1801,7 +1813,7 @@ if __name__ == "__main__":
         # TRANSLATORS: Please leave %s as it is,
         # because it is needed by the program.
         # Thank you for contributing to this project.
-        sys.stdout.write(_(u"""
+        sys.stdout.write(_("""
 Title: (%s); Version: description(%s); Author: (%s)
 %s
 
@@ -1821,7 +1833,7 @@ Title: (%s); Version: description(%s); Author: (%s)
         # TRANSLATORS: Please leave %s as it is,
         # because it is needed by the program.
         # Thank you for contributing to this project.
-        sys.stderr.write(_(u"The recorded file (%s) does not exist.\n%s\n"
+        sys.stderr.write(_("The recorded file (%s) does not exist.\n%s\n"
                             ) % (OPTS.recordedfile, MANDITORY))
         sys.exit(int(common.JOBSTATUS().ABORTED))
     #
@@ -1836,7 +1848,7 @@ Title: (%s); Version: description(%s); Author: (%s)
             # TRANSLATORS: Please leave %s as it is,
             # because it is needed by the program.
             # Thank you for contributing to this project.
-            sys.stderr.write(_(u'''Could not create the directory "%s" to
+            sys.stderr.write(_('''Could not create the directory "%s" to
 copy the file "%s" to "%s", aborting script.
 ''') % (common.CONFIG_DIR, common.INIT_CONFIG_FILE, common.CONFIG_FILE))
             exit(int(common.JOBSTATUS().ABORTED))

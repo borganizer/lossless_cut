@@ -35,14 +35,14 @@ from optparse import OptionParser
 from datetime import datetime
 
 ## Mythtv loss less cut specific imports
-import common as common
-from utilities import create_cachedir, create_logger, \
+from . import common as common
+from .utilities import create_cachedir, create_logger, \
         check_dependancies, set_language, get_config, \
         create_config_file
-from mythtvinterface import Mythtvinterface
+from .mythtvinterface import Mythtvinterface
 #
 ## Initialize local variables
-__title__ = u"load_db"
+__title__ = "load_db"
 __author__ = common.__author__
 #
 __version__ = "0.1.3"
@@ -92,29 +92,29 @@ This script requires the following to be installed and accessible:
 
 ''') % (MANDITORY)
 #
-MANDITORY = (MANDITORY + "%s") % u''
+MANDITORY = (MANDITORY + "%s") % ''
 #
 ## Command line options and arguments
 PARSER = OptionParser(
-        usage=u"%prog usage: load_and_insert.py -fhut [parameters]\n")
+        usage="%prog usage: load_and_insert.py -fhut [parameters]\n")
 PARSER.add_option(  "-f", "--archivefile", metavar="archivefile",
                     default="", dest="archivefile",
                     help=_(
-u'The absolute path and file name of the MythTV recording.'))
+'The absolute path and file name of the MythTV recording.'))
 PARSER.add_option(  "-k", "--keeplog", action="store_true",
                     default=False, dest="keeplog",
                     help=_(
-u"Keep the log file after the script has completed successfully."))
+"Keep the log file after the script has completed successfully."))
 PARSER.add_option(  "-t", "--test", action="store_true",
                     default=False, dest="test",
                     help=_(
-u"Test that the environment meets all the scripts dependencies."))
+"Test that the environment meets all the scripts dependencies."))
 PARSER.add_option(  "-u", "--usage", action="store_true",
                     default=False, dest="usage",
-                    help=_(u"Display this help/usage text and exit."))
+                    help=_("Display this help/usage text and exit."))
 PARSER.add_option(  "-v", "--version", action="store_true",
                     default=False, dest="version",
-                    help=_(u"Display version and author information"))
+                    help=_("Display version and author information"))
 #
 OPTS, ARGS = PARSER.parse_args()
 #
@@ -132,7 +132,7 @@ class OutStreamEncoder(object):
     def write(self, obj):
         """Wraps the output stream, encoding Unicode strings with the
         specified encoding"""
-        if isinstance(obj, unicode):
+        if isinstance(obj, str):
             try:
                 self.out.write(obj.encode(self.encoding))
             except IOError:
@@ -161,12 +161,12 @@ class Loadbugarchive(object):
         #
         try:
             self.configuration = get_config(opts, load_db=True)
-        except Exception, errmsg:
+        except Exception as errmsg:
             sys.stderr.write(
                 # TRANSLATORS: Please leave %s as it is,
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
-_(u'''Processing the configuration file failed. Error(%s)\n''')
+_('''Processing the configuration file failed. Error(%s)\n''')
                     % errmsg)
             sys.exit(1)
         #
@@ -178,12 +178,12 @@ _(u'''Processing the configuration file failed. Error(%s)\n''')
         try:
             self.mythtvinterface = Mythtvinterface(self.logger,
                                                     self.configuration)
-        except Exception, errmsg:
+        except Exception as errmsg:
             sys.stderr.write(
                 # TRANSLATORS: Please leave %s as it is,
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
-                _(u'''Acquiring access to MythTV failed, aborting script.
+                _('''Acquiring access to MythTV failed, aborting script.
 Error(%s)\n''')
                     % errmsg)
             sys.exit(1)
@@ -208,12 +208,12 @@ Error(%s)\n''')
         try:
             self.configuration['mythutil'] = check_dependancies(
                     self.configuration)
-        except Exception, errmsg:
+        except Exception as errmsg:
             sys.stderr.write(
                 # TRANSLATORS: Please leave %s as it is,
                 # because it is needed by the program.
                 # Thank you for contributing to this project.
-                _(u'''
+                _('''
 One or more script dependencies could not be satisfied, aborting script.
 Error(%s)\n''')
                     % errmsg)
@@ -223,8 +223,8 @@ Error(%s)\n''')
         self.mythtvinterface.stderr = sys.stderr
         #
         self.processing_started = datetime.now()
-        self.filename = u''
-        self.subtitles = u''
+        self.filename = ''
+        self.subtitles = ''
         self.configuration['verbose'] = True
         # end __init__()
 #
@@ -238,7 +238,7 @@ Error(%s)\n''')
         if self.configuration['test']:
             self._display_variables(summary=True)
             sys.stdout.write(
-_(u'''Congratulations! All script dependencies have been satisfied.
+_('''Congratulations! All script dependencies have been satisfied.
 You are ready to install the sample video file and insert the db records.
 '''))
             sys.exit(0)
@@ -258,25 +258,25 @@ You are ready to install the sample video file and insert the db records.
         #
         # Open the archive file
         sys.stdout.write(_(
-u'''Open the archive file "%s".
-''') % self.configuration['archivefile'] + u'\n')
+'''Open the archive file "%s".
+''') % self.configuration['archivefile'] + '\n')
         tar = tarfile.open(self.configuration['archivefile'], 'r:bz2')
         members = tar.getmembers()
         #
         # Extract the database Pickle file and the sample video
         for member in members:
-            if member.name.endswith(u'pickle'):
+            if member.name.endswith('pickle'):
                 dummy, pickle_filename = os.path.split(member.name)
                 tar.extract(member, path="")
                 sys.stdout.write(_(
-u'''Extract the database pickle file "%s".
-''') % member.name + u'\n')
+'''Extract the database pickle file "%s".
+''') % member.name + '\n')
                 break
         #
         # Load the pickle file
         sys.stdout.write(_(
-u'''Open the DB pickle file "%s".
-''') % pickle_filename + u'\n')
+'''Open the DB pickle file "%s".
+''') % pickle_filename + '\n')
         records = load(open(pickle_filename, "rb" ))
         dummy, self.configuration['base_name'] = os.path.split(
                                             records['video_filename'])
@@ -285,20 +285,20 @@ u'''Open the DB pickle file "%s".
             if member.name == self.configuration['base_name']:
                 tar.extract(member, path="")
                 sys.stdout.write(_(
-u'''Extract the video file "%s".
-''') % member.name + u'\n')
+'''Extract the video file "%s".
+''') % member.name + '\n')
                 break
         #
         # Insert the database records from the pickle file
-        sys.stdout.write(_(u'''Insert the database records.
-''') + u'\n')
+        sys.stdout.write(_('''Insert the database records.
+''') + '\n')
         self.mythtvinterface.insert_all_recording_data(records)
         #
         # Install the whole or sample video file into the Default
         # storage group
         sys.stdout.write(_(
-u'''Install the video file "%s".
-''') % self.configuration['base_name'] + u'\n')
+'''Install the video file "%s".
+''') % self.configuration['base_name'] + '\n')
         db_record = list(self.mythtvinterface.mythdb.searchRecorded(
                         basename=self.configuration['base_name']))[0]
         self.mythtvinterface.add_video_to_storage_group(
@@ -310,8 +310,8 @@ u'''Install the video file "%s".
         os.remove(self.configuration['base_name'])
         #
         sys.stdout.write(_(
-u'''Bug sample video file and records inserted.
-''') + u'\n\n')
+'''Bug sample video file and records inserted.
+''') + '\n\n')
         #
         return
 #
@@ -325,7 +325,7 @@ u'''Bug sample video file and records inserted.
             # TRANSLATORS: Please leave %s as it is,
             # because it is needed by the program.
             # Thank you for contributing to this project.
-_(u'''End of install archive data for "%s" at: %s'''
+_('''End of install archive data for "%s" at: %s'''
 ) % (self.configuration['recordedfile'],
             datetime.now().strftime(common.LL_START_END_FORMAT)))
         #
@@ -346,7 +346,7 @@ _(u'''End of install archive data for "%s" at: %s'''
         # because it is needed by the program.
         # Thank you for contributing to this project.
         verbage = \
-                _(u'''
+                _('''
 These are the variables and options to be used when performing a
 loss less cut of a MythTV recorded video:
 
@@ -380,7 +380,7 @@ if __name__ == "__main__":
         # TRANSLATORS: Please leave %s as it is,
         # because it is needed by the program.
         # Thank you for contributing to this project.
-        sys.stdout.write(_(u"""
+        sys.stdout.write(_("""
 Title: (%s); Version: description(%s); Author: (%s)
 %s
 
@@ -400,7 +400,7 @@ Title: (%s); Version: description(%s); Author: (%s)
         # TRANSLATORS: Please leave %s as it is,
         # because it is needed by the program.
         # Thank you for contributing to this project.
-        sys.stderr.write(_(u"The archive file (%s) does not exist.\n%s\n"
+        sys.stderr.write(_("The archive file (%s) does not exist.\n%s\n"
                             ) % (OPTS.archivefile, MANDITORY))
         sys.exit(0)
     #
@@ -411,11 +411,11 @@ Title: (%s); Version: description(%s); Author: (%s)
         try:
             if not os.path.isdir(common.CONFIG_DIR):
                 create_cachedir(common.CONFIG_DIR)
-        except Exception, errmsg:
+        except Exception as errmsg:
             # TRANSLATORS: Please leave %s as it is,
             # because it is needed by the program.
             # Thank you for contributing to this project.
-            sys.stderr.write(_(u'''Could not create the directory "%s" to
+            sys.stderr.write(_('''Could not create the directory "%s" to
 copy the file "%s" to "%s", aborting script.
 ''') % (common.CONFIG_DIR, common.INIT_CONFIG_FILE, common.CONFIG_FILE))
             exit(1)
@@ -423,7 +423,7 @@ copy the file "%s" to "%s", aborting script.
         # Initialize the new configuration with default values file
         try:
             create_config_file()
-        except IOError, errmsg:
+        except IOError as errmsg:
             sys.stderr.write(errmsg)
             exit(1)
     #
