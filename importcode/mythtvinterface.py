@@ -27,7 +27,7 @@
 #-------------------------------------
 #
 """
-__version__ = '0.1.8'
+__version__ = '0.1.9'
 # Version change log:
 # 0.1.0 Initial development
 # 0.1.1 Alpha release
@@ -74,6 +74,7 @@ __version__ = '0.1.8'
 #       recorded markup table. This is because those records are not
 #       created by MythTV when a scheduled recording occurs when a user
 #       is watching LiveTV.
+# 0.1.9 fixed getting video's duration
 #
 __title__ = \
 '''mythtvinterface - Providing all MythTV interface functionality'''
@@ -988,7 +989,7 @@ Error: %s
         #result = commandline_call('mkvinfo',
         #                u'"%s"' % self.configuration['mkv_file'])
 
-        arguments = '"--Output=General;%%Duration%%" "%(mkv_file)s"'
+        arguments = '--Output="General;%%Duration%%" "%(mkv_file)s"'
         result = commandline_call('mediainfo',
                                   arguments % self.configuration)
         stdout = ''

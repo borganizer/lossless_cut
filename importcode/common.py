@@ -23,7 +23,7 @@ import re
 
 __author__ = 'R.D. Vaughan <rdvLaunchpad@gmail.com>'
 __date__ = '$03/09/2012'
-__version__ = '3.0.0'
+__version__ = '3.0.1'
 # Version change log:
 # 0.1.0 Initial development
 # 0.1.1 Alpha release
@@ -155,6 +155,8 @@ __version__ = '3.0.0'
 #       fixed unicode issues
 #       proper exception handling
 #       added --passthrough, no subtitle processing
+# 3.0.1 
+#       fixed getting video's duration
 
 __copyright__ = 'Copyright (c) 2012 R.D. Vaughan'
 __license__ = 'GPLV2'

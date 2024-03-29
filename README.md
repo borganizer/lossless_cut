@@ -14,6 +14,7 @@ Lossless_Cut v0.x:
 Lossless_Cut v3.x:
 - python 3
 - added --passthrough, no subtitle processing
+- fixed getting video's duration
 
 ### Installation Instructions (besides the instructions from the above link, Ubuntu 18.04)
 
